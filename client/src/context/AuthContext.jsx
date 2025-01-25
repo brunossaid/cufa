@@ -122,6 +122,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated,
         courses,
         plans,
+        setPlans,
         logout,
       }}
     >
