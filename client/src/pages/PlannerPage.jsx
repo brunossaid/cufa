@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import CircleIcon from "@mui/icons-material/Circle";
 import AddIcon from "@mui/icons-material/AddRounded";
+import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import CloseIcon from "@mui/icons-material/CloseRounded";
 import CancelIcon from "@mui/icons-material/CancelRounded";
 import { useAuth } from "../context/AuthContext";
@@ -63,7 +64,7 @@ function PlannerPage() {
       // si la celda ya tiene el color de la materia seleccionada, la despintamos
       if (prev[key] === selectedCourse.color) {
         const updatedSchedule = { ...prev };
-        delete updatedSchedule[key]; // Eliminar la celda del horario
+        delete updatedSchedule[key]; // eliminar la celda del horario
         return updatedSchedule;
       }
 
@@ -148,6 +149,13 @@ function PlannerPage() {
         marginBottom={2.5}
       >
         <h1 style={{ margin: 0 }}>Planificador</h1>
+        <Box display="flex" alignItems="center">
+          <Tooltip title={"Agregar Plan"}>
+            <IconButton onClick={() => {}}>
+              {<AddCircleIcon fontSize="large" />}
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       <Box display="flex">

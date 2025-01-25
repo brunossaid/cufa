@@ -6,6 +6,7 @@ import {
   logoutRequest,
 } from "../api/auth";
 import { getCoursesRequest } from "../api/courses";
+import { getPlansRequest } from "../api/plans";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -62,6 +63,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // planes
+  const [plans, setPlans] = useState([]);
+  const fetchPlans = async (user) => {
+    try {
+      const res = await getPlansRequest(user.id);
+      setPlans(res.data);
+    } catch (error) {
+      console.log("Error fetching plans: ", error);
+    }
+  };
+
   // almacenar cookie para no desloguearse al actualizar
   useEffect(() => {
     const checkLogin = async () => {
@@ -109,6 +121,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         setIsAuthenticated,
         courses,
+        plans,
         logout,
       }}
     >
