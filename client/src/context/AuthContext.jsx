@@ -22,6 +22,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [loading, setLoading] = useState(true); // cuando todavia no cargaron los datos
 
   // register
   const signup = async (user) => {
@@ -37,8 +38,13 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data); // guardar datos del usuario en el contexto
     setIsAuthenticated(true); // autentificar usuario
 
-    await fetchCourses();
     Cookies.set("token", res.data.token);
+
+    console.log("res.data: ", res.data);
+
+    await fetchCourses(res.data);
+    await fetchPlans(res.data);
+
     console.log("signin res: ", res.data);
   };
 
@@ -77,6 +83,7 @@ export const AuthProvider = ({ children }) => {
   // almacenar cookie para no desloguearse al actualizar
   useEffect(() => {
     const checkLogin = async () => {
+      setLoading(true); // cargando..
       const cookies = Cookies.get(); // obtenemos las cookies
 
       let token = cookies.token || localStorage.getItem("authToken"); // usamos cookies si están disponibles, sino intentamos con localStorage
@@ -86,6 +93,7 @@ export const AuthProvider = ({ children }) => {
       // si no hay token, no hay usuario autenticado
       if (!token) {
         setIsAuthenticated(false);
+        setLoading(false); // termina de cargar
         return;
       }
 
@@ -100,12 +108,17 @@ export const AuthProvider = ({ children }) => {
           // si la respuesta es valida (res.data existe), el token es valido
           setIsAuthenticated(true);
           setUser(res.data);
+
+          // cargar datos
           await fetchCourses(res.data);
+          await fetchPlans(res.data);
         }
       } catch (error) {
         console.log("error: ", error);
         setIsAuthenticated(false);
         setUser(null);
+      } finally {
+        setLoading(false); // termina de cargar
       }
     };
 
@@ -124,6 +137,7 @@ export const AuthProvider = ({ children }) => {
         plans,
         setPlans,
         logout,
+        loading,
       }}
     >
       {children}

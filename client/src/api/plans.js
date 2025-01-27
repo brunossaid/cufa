@@ -33,6 +33,18 @@ export const updatePlanRequest = (planId, plan) => {
   });
 };
 
+// actualizar un plan (eliminar materia completa del plan)
+export const removeCourseFromPlanRequest = (planId, courseCode) => {
+  const token = Cookies.get("token") || localStorage.getItem("authToken");
+  return axios.delete(`${API}/plans/${planId}/remove-course`, {
+    headers: {
+      Authorization: `Bearer ${token}`, // enviar token
+      "Content-Type": "application/json",
+    },
+    data: { courseCode }, // enviar el codigo del curso en el cuerpo de la solicitud
+  });
+};
+
 // eliminar un plan
 export const deletePlanRequest = (planId) => {
   const token = Cookies.get("token") || localStorage.getItem("authToken");

@@ -110,7 +110,10 @@ function AppContent() {
                 path="/courses/:code"
                 element={<CoursePage showAlert={showAlert} />}
               />
-              <Route path="/planner" element={<PlannerPage />} />
+              <Route
+                path="/planner"
+                element={<PlannerPage showAlert={showAlert} />}
+              />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/profile" element={<h1>User Profile</h1>} />

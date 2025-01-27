@@ -15,6 +15,8 @@ import {
   Divider,
   Menu,
   MenuItem,
+  Button,
+  TextField,
 } from "@mui/material";
 import CircleIcon from "@mui/icons-material/Circle";
 import AddIcon from "@mui/icons-material/AddRounded";
@@ -25,10 +27,14 @@ import { useAuth } from "../context/AuthContext";
 import Planner from "../components/Planner";
 import { createPlanRequest } from "../api/plans";
 import { getPlansRequest } from "../api/plans";
+import DeleteIcon from "@mui/icons-material/DeleteRounded";
+import { deletePlanRequest } from "../api/plans";
+import { updatePlanRequest } from "../api/plans";
 
-function PlannerPage() {
+function PlannerPage({ showAlert }) {
   const { user, courses, plans, setPlans } = useAuth();
 
+  // agregar plan
   const handleAddPlan = async () => {
     try {
       const newPlan = {
@@ -38,13 +44,48 @@ function PlannerPage() {
       };
 
       const response = await createPlanRequest(newPlan);
-      console.log("Nuevo plan creado:", response.data);
-      setPlans((prevPlans) => [...prevPlans, response.data]); // Actualiza el estado
+      console.log("plan creado");
+      setPlans((prevPlans) => [...prevPlans, response.data]);
+      showAlert("Plan Creado", "success");
     } catch (error) {
       console.error("Error al crear el plan:", error);
     }
   };
 
+  // eliminar plan
+  const handleDeletePlan = async (plan) => {
+    try {
+      await deletePlanRequest(plan._id); // llama a la API para eliminar el plan
+      console.log("plan eliminado");
+      setPlans((prevPlans) => prevPlans.filter((p) => p._id !== plan._id));
+      showAlert("Plan Eliminado", "error", <DeleteIcon />);
+    } catch (error) {
+      console.error("error al eliminar el plan:", error.response.data.message);
+    }
+  };
+
+  // modificar plan
+  const handleUpdatePlanName = async (planId, newName) => {
+    try {
+      const updatedPlan = plans.find((plan) => plan._id === planId);
+      const updatedData = { ...updatedPlan, name: newName };
+      await updatePlanRequest(planId, updatedData);
+
+      setPlans((prevPlans) =>
+        prevPlans.map((plan) =>
+          plan._id === planId ? { ...plan, name: newName } : plan
+        )
+      );
+      console.log("plan actualizado:", newName);
+    } catch (error) {
+      console.error(
+        "Error al actualizar el plan:",
+        error.response?.data?.message
+      );
+    }
+  };
+
+  // actualizar la pagina todo al crear/eliminar plan
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -58,6 +99,21 @@ function PlannerPage() {
     if (user) fetchPlans();
   }, [user]);
 
+  const [coursesFB, setCoursesFB] = useState(courses);
+
+  useEffect(() => {
+    const futbolCourse = {
+      name: "Futbol",
+      code: "FUT",
+      status: "pending", // para que aparezca en el menu
+      color: "#FF5733",
+    };
+
+    // agregamos "futbol" a coursesFB localmente
+    const updatedCourses = [...courses, futbolCourse];
+    setCoursesFB(updatedCourses);
+  }, [courses]);
+
   return (
     <div>
       <Box
@@ -68,18 +124,67 @@ function PlannerPage() {
       >
         <h1 style={{ margin: 0 }}>Planificador</h1>
         <Box display="flex" alignItems="center">
-          <Tooltip title={"Agregar Plan"}>
-            <IconButton onClick={handleAddPlan}>
-              <AddCircleIcon fontSize="large" />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant={"text"}
+            onClick={handleAddPlan}
+            color="white"
+            endIcon={<AddCircleIcon />}
+            style={{
+              transition: "transform 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1)";
+            }}
+          >
+            Agregar Plan
+          </Button>
         </Box>
       </Box>
       {plans.length === 0 ? (
-        <Typography>no hay planes xd</Typography>
+        <Typography>No hay planes creados</Typography>
       ) : (
         plans.map((plan) => (
-          <Planner key={plan._id} plan={plan} courses={courses} />
+          <div key={plan._id}>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <TextField
+                label="plan"
+                variant="outlined"
+                size="small"
+                sx={{
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    border: "none", // eliminar borde
+                  },
+                }}
+                value={plan.name}
+                // actualizamos el estado local
+                onChange={(e) =>
+                  setPlans((prevPlans) =>
+                    prevPlans.map((p) =>
+                      p._id === plan._id ? { ...p, name: e.target.value } : p
+                    )
+                  )
+                }
+                // al deseleccionar el textfield, guardamos el cambio en la base de datos
+                onBlur={(e) => handleUpdatePlanName(plan._id, e.target.value)}
+              />
+              <Tooltip title="Eliminar Plan">
+                <IconButton
+                  size={"small"}
+                  onClick={() => handleDeletePlan(plan)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <Planner plan={plan} courses={coursesFB} />
+          </div>
         ))
       )}
     </div>

@@ -5,6 +5,7 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth.routes.js";
 import coursesRoutes from "./routes/courses.routes.js";
+import plansRoutes from "./routes/plans.routes.js";
 
 const app = express();
 
@@ -15,5 +16,6 @@ app.use(cookieParser());
 
 app.use("/api", authRoutes);
 app.use("/api", coursesRoutes);
+app.use("/api", plansRoutes);
 
 export default app;

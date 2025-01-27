@@ -31,6 +31,7 @@ export const createCourse = async (req, res) => {
       periods,
       modality,
       observations,
+      color,
     } = req.body;
 
     const newCourse = new course({
@@ -51,6 +52,7 @@ export const createCourse = async (req, res) => {
       periods,
       modality,
       observations,
+      color,
       user: req.user.id,
     });
 

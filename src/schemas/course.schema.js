@@ -74,4 +74,8 @@ export const createCourseSchema = z.object({
     .optional(),
   modality: z.enum(["presential", "virtual", "mixed"]).optional(),
   observations: z.string().trim().optional(),
+  color: z
+    .string({ required_error: "Color is required" })
+    .trim()
+    .min(1, { message: "Color cannot be empty" }),
 });

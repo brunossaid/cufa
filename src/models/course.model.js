@@ -142,6 +142,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       trim: true, // comentarios
     },
+    color: {
+      type: String,
+      trim: true, // color
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

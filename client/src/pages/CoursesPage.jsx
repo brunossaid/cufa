@@ -422,6 +422,13 @@ function CoursesPage({ showAlert }) {
     setObservations(newValue);
   };
 
+  // crear color aleatorio para la materia
+  const getRandomColor = () => {
+    return `#${Math.floor(Math.random() * 16777215)
+      .toString(16)
+      .padStart(6, "0")}`;
+  };
+
   // guardar datos
   const handleSave = async () => {
     const newErrors = {};
@@ -462,6 +469,7 @@ function CoursesPage({ showAlert }) {
       professors,
       schedules,
       user: user.id,
+      color: getRandomColor(),
     };
 
     // eliminar campos vacios
