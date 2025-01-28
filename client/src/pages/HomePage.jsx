@@ -65,7 +65,6 @@ const HomePage = () => {
         <LoadingX />
       ) : (
         <div>
-          {console.log("courses: ", courses)}
           <h1 style={{ marginBottom: 40 }}>Ingenieria en Informatica</h1>
           {/* piechart */}
           <Grid container spacing={2} marginX={10}>
@@ -321,14 +320,6 @@ const HomePage = () => {
                   alignItems: "center",
                 }}
               >
-                {/* 
-                <Typography
-                  sx={{ width: 20, textAlign: "center", marginRight: 1 }}
-                  variant="h6"
-                >
-                  ??
-                </Typography>
-                */}
                 <HubIcon fontSize={"medium"} sx={{ marginRight: 1 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Tooltip

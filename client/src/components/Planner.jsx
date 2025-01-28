@@ -4,7 +4,6 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   Paper,
   TableFooter,
@@ -15,17 +14,12 @@ import {
   Divider,
   Menu,
   MenuItem,
-  TextField,
 } from "@mui/material";
 import CircleIcon from "@mui/icons-material/Circle";
 import AddIcon from "@mui/icons-material/AddRounded";
-import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import CloseIcon from "@mui/icons-material/CloseRounded";
-import CancelIcon from "@mui/icons-material/CancelRounded";
-import { useAuth } from "../context/AuthContext";
 import { updatePlanRequest } from "../api/plans";
 import { removeCourseFromPlanRequest } from "../api/plans";
-import debounce from "lodash.debounce";
 
 // dias y horas
 const days = ["monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -38,28 +32,10 @@ const dayTranslations = {
 };
 const hours = Array.from({ length: 15 }, (_, i) => 8 + i);
 
-// colores predefinidos
-const PREDEFINED_COLORS = [
-  "#33FF57",
-  "#3357FF",
-  "#FF33A1",
-  "#A133FF",
-  "#33FFF5",
-  "#FF8F33",
-  "#8FFF33",
-  "#338FFF",
-  "#FF3333",
-];
-
 export default function Planner({ courses, plan }) {
   const [schedule, setSchedule] = useState({});
   const [selectedCourse, setSelectedCourse] = useState(null); // curso seleccionado
   const [activeCourses, setActiveCourses] = useState([]); // cursos en el menu
-
-  // deseleccinar materia
-  const unselectCourse = () => {
-    setSelectedCourse(null);
-  };
 
   const handleCellClick = async (day, hour) => {
     if (!selectedCourse) return; // si no hay curso seleccionado, no hacer nada
@@ -70,44 +46,61 @@ export default function Planner({ courses, plan }) {
     if (updatedSchedule[key] === selectedCourse.color) {
       // si la celda ya tiene el color de la materia seleccionada, la despintamos
       delete updatedSchedule[key];
+
+      setSchedule(updatedSchedule); // actualizar el estado inmediatamente
+
+      try {
+        // filtrar la celda correspondiente de las "cells" del plan
+        const updatedCells = plan.cells.filter(
+          (cell) => !(cell.day === day && cell.hour === parseInt(hour, 10))
+        );
+
+        const updatedPlan = {
+          ...plan,
+          cells: updatedCells,
+        };
+
+        // guardar en la base de datos
+        await updatePlanRequest(plan._id, updatedPlan);
+        console.log("cambio guardado");
+        plan.cells = updatedCells;
+      } catch (error) {
+        console.error(
+          "error al guardar el cambio:",
+          error.response?.data?.message
+        );
+      }
     } else {
       // si no, pintamos la celda con el color de la materia seleccionada
       updatedSchedule[key] = selectedCourse.color;
-    }
 
-    setSchedule(updatedSchedule); // actualizar el estado inmediatamente
+      setSchedule(updatedSchedule); // actualizar el estado inmediatamente
 
-    try {
-      // preparar los datos para guardar
-      const cells = Object.entries(updatedSchedule).map(([key, color]) => {
-        const [day, hour] = key.split("-");
-        console.log("activeCourses: ", activeCourses);
-        const course = activeCourses.find((course) => course.color === color);
-        console.log("course: ", course);
-        console.log("courses: ", courses);
-        return {
-          day,
-          hour: parseInt(hour, 10),
-          courseCode: course?.code || null,
+      try {
+        // preparar los datos para guardar
+        const cells = Object.entries(updatedSchedule).map(([key, color]) => {
+          const [day, hour] = key.split("-");
+          const course = activeCourses.find((course) => course.color === color);
+          return {
+            day,
+            hour: parseInt(hour, 10),
+            courseCode: course?.code || null,
+          };
+        });
+
+        const updatedPlan = {
+          ...plan,
+          cells,
         };
-      });
-
-      const updatedPlan = {
-        ...plan,
-        cells,
-      };
-
-      console.log("updatedPlan: ", updatedPlan);
-
-      // guardar en la base de datos
-      await updatePlanRequest(plan._id, updatedPlan);
-      console.log("updatedPlan: ", updatedPlan);
-      console.log("Cambio guardado automáticamente");
-    } catch (error) {
-      console.error(
-        "Error al guardar el cambio:",
-        error.response?.data?.message
-      );
+        // guardar en la base de datos
+        await updatePlanRequest(plan._id, updatedPlan);
+        console.log("cambio guardado");
+      } catch (error) {
+        console.error(
+          "error al guardar el cambio:",
+          error.response?.data?.message
+        );
+      }
     }
   };
 
@@ -152,16 +145,6 @@ export default function Planner({ courses, plan }) {
     }
   };
 
-  // obtener color aleatorio
-  const getRandomColor = () => {
-    const availableColors = PREDEFINED_COLORS.filter(
-      (color) => !activeCourses.some((course) => course.color === color)
-    );
-    return availableColors.length > 0
-      ? availableColors[Math.floor(Math.random() * availableColors.length)]
-      : PREDEFINED_COLORS[Math.floor(Math.random() * PREDEFINED_COLORS.length)];
-  };
-
   // menu de agregar materia
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -177,16 +160,16 @@ export default function Planner({ courses, plan }) {
   const handleAddCourse = (course) => {
     // verificar que el curso no este repetido
     if (course) {
-      console.log("course.color: ", course.color);
       setActiveCourses((prev) => [
         ...prev,
         {
           name: course.name,
           code: course.code,
-          color: course.color || "#7303fc", //acaa xd
+          color: course.color || "#7303fc",
         },
       ]);
       setAnchorEl(null); // cerrar menu
+      setSelectedCourse(course);
     }
   };
 
@@ -204,24 +187,6 @@ export default function Planner({ courses, plan }) {
     });
 
     return cells;
-  };
-
-  // función para guardar el plan
-  const handleSavePlan = async () => {
-    try {
-      const cells = preparePlanData(); // procesar los datos del plan
-      const updatedPlan = {
-        ...plan,
-        cells, // añadir las celdas al plan
-      };
-
-      // llamar al API para guardar el plan actualizado
-      await updatePlanRequest(plan._id, updatedPlan);
-
-      console.log("Plan guardado con éxito");
-    } catch (error) {
-      console.error("Error al guardar el plan:", error.response?.data?.message);
-    }
   };
 
   // cargar las celdas y activeCourses del plan al cargar la pagina
@@ -247,7 +212,6 @@ export default function Planner({ courses, plan }) {
   };
   useEffect(() => {
     initializeSchedule();
-    console.log("plan: ", plan);
   }, [plan, courses]);
 
   return (
