@@ -60,6 +60,7 @@ function RegisterPage() {
           fullWidth
           error={!!errors.username}
           helperText={errors.username?.message}
+          autoComplete="off"
         />
         <TextField
           label="Email"
@@ -69,6 +70,7 @@ function RegisterPage() {
           fullWidth
           error={!!errors.email}
           helperText={errors.email?.message}
+          autoComplete="off"
         />
         <TextField
           label="Contraseña"

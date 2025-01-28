@@ -57,6 +57,7 @@ function LoginPage() {
           fullWidth
           error={!!errors.username}
           helperText={errors.username?.message}
+          autoComplete="off"
         />
         <TextField
           label="Contraseña"

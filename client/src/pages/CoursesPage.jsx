@@ -749,7 +749,7 @@ function CoursesPage({ showAlert }) {
         justifyContent="space-between"
         marginBottom={2.5}
       >
-        <h1 style={{ margin: 0 }}>Ingenieria en Informatica</h1>
+        <h1 style={{ margin: 0 }}>Materias</h1>
         <Box display="flex" alignItems="center">
           {mode !== "view" && (
             <Tooltip title="Agregar Materia">
