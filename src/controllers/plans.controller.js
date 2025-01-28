@@ -57,20 +57,12 @@ export const updatePlan = async (req, res) => {
       plan.name = name;
     }
 
-    // actualizamos o agregamos las celdas
+    // reemplazar completamente las celdas
     if (cells && Array.isArray(cells)) {
-      cells.forEach((cell) => {
-        const existingCellIndex = plan.cells.findIndex(
-          (c) => c.day === cell.day && c.hour === cell.hour
-        );
-
-        if (existingCellIndex !== -1) {
-          plan.cells[existingCellIndex].courseCode = cell.courseCode;
-        } else {
-          plan.cells.push(cell);
-        }
-      });
+      plan.cells = cells;
     }
+
+    console.log("(UP)plan.cells: ", req.body);
 
     // guardar los cambios en la base de datos
     await plan.save();
