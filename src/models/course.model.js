@@ -13,26 +13,6 @@ const professorSchema = new mongoose.Schema({
   },
 });
 
-// esquema de correlativas
-const prerequisiteSchema = new mongoose.Schema(
-  {
-    code: {
-      type: String,
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    status: {
-      type: Boolean,
-      required: true,
-    },
-  },
-  { strict: true }
-);
-
 // esquema de horarios
 const scheduleSchema = new mongoose.Schema({
   startTime: {
@@ -110,7 +90,13 @@ const courseSchema = new mongoose.Schema(
       enum: [1, 2],
       required: true,
     },
-    prerequisites: [prerequisiteSchema], // array de correlativas
+    prerequisites: [
+      // array de correlativas (IDs)
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "course", // referencia a la colección "course"
+      },
+    ],
     type: {
       type: String,
       enum: ["mandatory", "optional"], // obligatoria - optativa

@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         setIsAuthenticated,
         courses,
+        setCourses,
         plans,
         setPlans,
         logout,

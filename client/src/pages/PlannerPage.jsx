@@ -157,6 +157,7 @@ function PlannerPage({ showAlert }) {
                 label="plan"
                 variant="outlined"
                 size="small"
+                autoComplete="off"
                 sx={{
                   "& .MuiOutlinedInput-notchedOutline": {
                     border: "none", // eliminar borde

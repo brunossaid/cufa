@@ -41,17 +41,9 @@ export const createCourseSchema = z.object({
   grade: z.number().min(0).max(10).optional(),
   prerequisites: z
     .array(
-      z.object({
-        code: z
-          .string({ required_error: "Prerequisite code is required" })
-          .trim(),
-        name: z
-          .string({ required_error: "Prerequisite name is required" })
-          .trim(),
-        status: z.boolean({
-          required_error: "Prerequisite status is required",
-        }),
-      })
+      z
+        .string({ required_error: "Prerequisite ID is required" })
+        .regex(/^[0-9a-fA-F]{24}$/, { message: "Invalid ID format" }) // valida formato de ObjectId
     )
     .optional(),
   periods: z

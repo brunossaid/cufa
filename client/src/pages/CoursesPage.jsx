@@ -49,7 +49,11 @@ import ClockIcon from "@mui/icons-material/QueryBuilderRounded";
 import HeadsetIcon from "@mui/icons-material/HeadsetMicRounded";
 import GroupsIcon from "@mui/icons-material/GroupsRounded";
 import { useAuth } from "../context/AuthContext";
-import { createCourseRequest, updateCourseRequest } from "../api/courses";
+import {
+  createCourseRequest,
+  getCoursesRequest,
+  updateCourseRequest,
+} from "../api/courses";
 import { useNavigate } from "react-router-dom";
 
 // datos de las columnas
@@ -57,13 +61,13 @@ const columns = [
   { width: "15%", label: "Código", dataKey: "code", align: "center" },
   { width: "35%", label: "Materia", dataKey: "course", align: "left" },
   {
-    width: "15%",
+    width: "20%",
     label: "Carga Horaria",
     dataKey: "workload",
     align: "center",
   },
   {
-    width: "20%",
+    width: "15%",
     label: "Correlativas",
     dataKey: "prerequisites",
     align: "center",
@@ -74,36 +78,6 @@ const columns = [
     dataKey: "action",
     align: "center",
   },
-];
-
-// función para crear datos de materias
-function createCourse(code, course, workload, prerequisites, type, status) {
-  return { code, course, workload, prerequisites, type, status };
-}
-
-// datos de materias con separaciones por año y cuatrimestre
-const initialRows = [
-  { type: "year", label: "Primer Año" }, // primer año
-  { type: "semester", label: "1º Cuatrimestre" },
-  createCourse("MAT1", "Matemática I", 4, "-", "mandatory", "approved"),
-  createCourse("FIS1", "Física I", 4, "-", "mandatory", "promoted"),
-  { type: "semester", label: "2º Cuatrimestre" },
-  createCourse("MAT2", "Matemática II", 4, "MAT1", "mandatory", "approved"),
-  createCourse("QUI1", "Química General", 3, "-", "optional", "promoted"),
-  { type: "year", label: "Segundo Año" }, // segundo año
-  { type: "semester", label: "1º Cuatrimestre" },
-  createCourse("ALG1", "Álgebra Lineal", 4, "MAT1", "mandatory", "in_progress"),
-  createCourse("PROG", "Programación I", 4, "-", "optional", "promoted"),
-  { type: "semester", label: "2º Cuatrimestre" },
-  createCourse("EST1", "Estadística", 4, "MAT1", "mandatory", "in_progress"),
-  createCourse("FIS2", "Física II", 4, "FIS1", "mandatory", "in_progress"),
-  { type: "title", label: "Título Intermedio" }, // título intermedio
-  { type: "year", label: "Tercer Año" }, // tercer año
-  { type: "semester", label: "1º Cuatrimestre" },
-  createCourse("CALC", "Cálculo Avanzado", 4, "MAT2", "mandatory", "pending"),
-  createCourse("BD1", "Bases de Datos I", 4, "PROG", "mandatory", "pending"),
-  { type: "semester", label: "2º Cuatrimestre" },
-  createCourse("OPT1", "Materia Optativa I", 4, "-", "optional", "pending"),
 ];
 
 // componentes personalizados de la tabla virtuoso
@@ -159,32 +133,40 @@ function CoursesPage({ showAlert }) {
   };
 
   // cambiar status de las materias
-  const toggleStatus = (code) => {
-    setRows((prevRows) =>
-      prevRows.map((row) => {
-        if (row.code === code) {
-          const newStatus =
-            row.status === "approved" || row.status === "promoted"
-              ? "in_progress"
-              : row.status === "in_progress"
-              ? "pending"
-              : "approved";
+  const toggleStatus = async (code) => {
+    try {
+      // encontrar la fila que se va a actualizar
+      const updatedRow = rows.find((row) => row.code === code);
+      if (!updatedRow) {
+        return;
+      }
 
-          // actualizamos la base de datos
-          try {
-            updateCourseRequest(row._id, { status: newStatus });
-            console.log(row.name, " changed status to :", newStatus);
-          } catch (error) {
-            console.error("error: ", error);
-            showAlert("Error", "error");
-          }
+      // calcular el nuevo estado
+      const newStatus =
+        updatedRow.status === "approved" || updatedRow.status === "promoted"
+          ? "in_progress"
+          : updatedRow.status === "in_progress"
+          ? "pending"
+          : "approved";
 
-          // devolver el objeto modificado
-          return { ...row, status: newStatus };
-        }
-        return row;
-      })
-    );
+      // actualizar la base de datos
+      await updateCourseRequest(updatedRow._id, { status: newStatus });
+
+      // actualizar el estado local
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.code === code ? { ...row, status: newStatus } : row
+        )
+      );
+
+      console.log(updatedRow.name, "status cambiado a:", newStatus);
+
+      // recargar courses
+      fetchCourses();
+    } catch (error) {
+      console.error("Error al actualizar el status: ", error);
+      showAlert("Error", "error");
+    }
   };
 
   // determinar el color de la fila segun el status
@@ -280,23 +262,36 @@ function CoursesPage({ showAlert }) {
               align="center"
               style={{
                 backgroundColor:
-                  row.status === "pending" && row.prerequisites.length > 0
-                    ? row.prerequisites.every(
-                        (prereq) => prereq.status === true
-                      )
-                      ? "green" // si todas las correlativas tienen status: true, color verde
-                      : getRowBackgroundColor(row.status) // color predeterminado si alguna correlativa no tiene status: true
-                    : getRowBackgroundColor(row.status), // si no es pending o no tiene correlativas, color predeterminado
+                  row.status === "approved"
+                    ? getRowBackgroundColor(row.status)
+                    : (row.prerequisites || []).length === 0 ||
+                      row.prerequisites.every((prerequisiteId) => {
+                        const course = courses.find(
+                          (course) => course._id === prerequisiteId
+                        );
+                        return course ? course.status === "approved" : false;
+                      })
+                    ? "green" // verde si no hay prerequisites o si todas están aprobadas
+                    : getRowBackgroundColor(row.status), // color predeterminado
               }}
             >
-              {row.prerequisites.map((prereq, index) => (
-                <Tooltip key={index} title={prereq.name}>
-                  <span>
-                    {prereq.code}
-                    {index < row.prerequisites.length - 1 && " - "}
-                  </span>
-                </Tooltip>
-              ))}
+              {(row.prerequisites || []).length > 0 ? (
+                row.prerequisites.map((prerequisiteId, index) => {
+                  const course = courses.find(
+                    (course) => course._id === prerequisiteId
+                  );
+                  return course ? (
+                    <Tooltip key={index} title={course.name}>
+                      <span>
+                        {course.code}
+                        {index < row.prerequisites.length - 1 && " - "}
+                      </span>
+                    </Tooltip>
+                  ) : null;
+                })
+              ) : (
+                <span> - </span>
+              )}
             </TableCell>
             <TableCell
               align="center"
@@ -376,12 +371,11 @@ function CoursesPage({ showAlert }) {
     setWorkload(event.target.value);
   };
   const [prerequisites, setPrerequisites] = React.useState([]);
-  const handleChangePrerequisites = (event, newValue) => {
-    const updatedPrerequisites = newValue.map((course) => ({
-      code: course.code,
-      name: course.name,
-      status: ["approved", "promoted"].includes(course.status), // convierte a booleano
-    }));
+  const handleChangePrerequisites = (event, value) => {
+    console.log("value: ", value);
+
+    // guardar solo las IDs de las materias seleccionadas
+    const updatedPrerequisites = value.map((course) => course._id);
     setPrerequisites(updatedPrerequisites);
   };
   const [type, setType] = React.useState("mandatory");
@@ -488,6 +482,7 @@ function CoursesPage({ showAlert }) {
       handleCloseDialog();
       setErrors({});
       setPage(1);
+      fetchCourses();
     } catch (error) {
       console.error("error: ", error.response?.data?.message || error.message);
       showAlert("Error", "error");
@@ -630,7 +625,7 @@ function CoursesPage({ showAlert }) {
   ];
 
   // traer materias del contexto
-  const { courses, user } = useAuth(); // extraer materias del contexto
+  const { courses, setCourses, user } = useAuth(); // extraer materias del contexto
 
   // crear las filas (materias y separadores)
   const generateRows = (courses) => {
@@ -736,7 +731,21 @@ function CoursesPage({ showAlert }) {
   // estado para las filas
   const [rows, setRows] = React.useState(rowsFromCourses);
 
-  // que se actualicen las fials
+  // trar courses
+  const fetchCourses = async () => {
+    try {
+      const response = await getCoursesRequest(user.id);
+      setCourses(response.data);
+    } catch (error) {
+      console.error("Error al cargar los courses:", error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchCourses();
+  }, [user]);
+
+  // que se actualicen las filas
   React.useEffect(() => {
     setRows(generateRows(courses));
   }, [courses]);
@@ -758,11 +767,9 @@ function CoursesPage({ showAlert }) {
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip
-            title={mode === "view" ? "Modo Visualizacion" : "Modo Edicion"}
-          >
+          <Tooltip title={mode === "view" ? "Editar" : "Visualizar"}>
             <IconButton onClick={toggleMode}>
-              {mode === "view" ? <VisibilityIcon /> : <EditIcon />}
+              {mode === "view" ? <EditIcon /> : <VisibilityIcon />}
             </IconButton>
           </Tooltip>
         </Box>
@@ -871,18 +878,19 @@ function CoursesPage({ showAlert }) {
               </Grid>
 
               {/* fila 3: correlativas */}
+              {/* codigo nuevo */}
               <Grid size={12}>
                 <Autocomplete
                   multiple
                   name="prerequisites"
                   options={courses.filter(
                     (course) =>
-                      !prerequisites.some(
-                        (selected) => selected.code === course.code
-                      )
+                      !prerequisites.some((selected) => selected === course._id)
                   )}
-                  getOptionLabel={(option) => option.name}
-                  value={prerequisites}
+                  getOptionLabel={(option) => `(${option.code}) ${option.name}`}
+                  value={courses.filter((course) =>
+                    prerequisites.includes(course._id)
+                  )}
                   onChange={handleChangePrerequisites}
                   renderInput={(params) => (
                     <TextField
@@ -893,7 +901,6 @@ function CoursesPage({ showAlert }) {
                   )}
                 />
               </Grid>
-
               {/* fila 4: año - cuatrimestre - tipo */}
               <Grid container size={12}>
                 <Grid size={{ xs: 12, sm: 12, md: 8, lg: 5 }}>

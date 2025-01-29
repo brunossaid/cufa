@@ -34,19 +34,43 @@ import PersonIcon from "@mui/icons-material/PersonRounded";
 import GroupsIcon from "@mui/icons-material/GroupsRounded";
 import HeadsetIcon from "@mui/icons-material/HeadsetMicRounded";
 import { updateCourseRequest } from "../api/courses";
+import LoadingX from "../components/LoadingX";
+import { useNavigate } from "react-router-dom";
 
 function CoursePage({ showAlert }) {
-  const { courses } = useAuth(); // extraer usuario del contexto
+  const { courses, loading } = useAuth();
   const { code } = useParams();
 
+  // si los courses estan cargando
+  if (loading) {
+    return <LoadingX />;
+  }
+
+  const navigate = useNavigate();
+
+  // si no hay cursos
+  if (!courses || courses.length === 0) {
+    showAlert("No hay materias cargadas", "error");
+    navigate("/courses");
+    return;
+  }
+
+  // buscar el curso con el "code" de la URL
   const course = courses.find((course) => course.code === code);
+
+  // si no se encuentra el curso
+  if (!course) {
+    showAlert("Materia no encontrada", "error");
+    navigate("/courses");
+    return;
+  }
 
   // guardar datos ingresados en variables
   const [name, setName] = React.useState("");
   const handleChangeName = (event) => {
     setName(event.target.value);
   };
-  const [status, setStatus] = React.useState(course.status);
+  const [status, setStatus] = React.useState(course?.status || "");
   const handleChangeStatus = (event) => {
     setStatus(event.target.value);
   };
@@ -55,6 +79,15 @@ function CoursePage({ showAlert }) {
     setWorkload(event.target.value);
   };
   const [prerequisites, setPrerequisites] = React.useState([]);
+  const handleChangePrerequisites = (event, value) => {
+    // console.log("value: ", value);
+
+    // guardar solo las IDs de las materias seleccionadas
+    const updatedPrerequisites = value.map((course) => course._id);
+    setPrerequisites(updatedPrerequisites);
+  };
+  {
+    /* 
   const handleChangePrerequisites = (event, newValue) => {
     const updatedPrerequisites = newValue.map((course) => ({
       code: course.code,
@@ -63,6 +96,8 @@ function CoursePage({ showAlert }) {
     }));
     setPrerequisites(updatedPrerequisites);
   };
+  */
+  }
   const [type, setType] = React.useState("");
   const handleChangeType = (event, newType) => {
     setType(newType);
@@ -218,8 +253,6 @@ function CoursePage({ showAlert }) {
     const filteredCourse = Object.fromEntries(
       Object.entries(editedCourse).filter(([_, value]) => value !== "")
     );
-
-    console.log("filteredCourse: ", filteredCourse);
 
     resetFields();
     setErrors({});
@@ -447,6 +480,28 @@ function CoursePage({ showAlert }) {
               name="prerequisites"
               options={courses.filter(
                 (course) =>
+                  !prerequisites.some((selected) => selected === course._id)
+              )}
+              getOptionLabel={(option) => `(${option.code}) ${option.name}`}
+              value={courses.filter((course) =>
+                prerequisites.includes(course._id)
+              )}
+              onChange={handleChangePrerequisites}
+              readOnly={!editMode}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Correlativas"
+                  placeholder="Materia"
+                />
+              )}
+            />
+            {/* 
+            <Autocomplete
+              multiple
+              name="prerequisites"
+              options={courses.filter(
+                (course) =>
                   !prerequisites.some(
                     (selected) => selected.code === course.code
                   )
@@ -463,6 +518,7 @@ function CoursePage({ showAlert }) {
                 />
               )}
             />
+            */}
           </Grid>
         </Grid>
 
@@ -612,7 +668,9 @@ function CoursePage({ showAlert }) {
                   </Typography>
                   <Tooltip title="Agregar Profesor">
                     <span
-                      style={{ visibility: editMode ? "visible" : "hidden" }}
+                      style={{
+                        visibility: editMode ? "visible" : "hidden",
+                      }}
                     >
                       <IconButton onClick={addProfessor}>
                         <AddIcon />
@@ -747,7 +805,9 @@ function CoursePage({ showAlert }) {
                   </Typography>
                   <Tooltip title="Agregar Horario">
                     <span
-                      style={{ visibility: editMode ? "visible" : "hidden" }}
+                      style={{
+                        visibility: editMode ? "visible" : "hidden",
+                      }}
                     >
                       <IconButton onClick={addSchedule}>
                         <AddIcon />

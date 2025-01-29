@@ -18,46 +18,64 @@ const HomePage = () => {
 
   // 1 año
   const approvedPercentage1 =
-    (courses.filter((course) => course.year == 1 && course.status == "approved")
-      .length /
-      courses.filter((course) => course.year == 1).length) *
-      100 || 0;
+    Math.round(
+      (courses.filter(
+        (course) => course.year == 1 && course.status == "approved"
+      ).length /
+        courses.filter((course) => course.year == 1).length) *
+        100
+    ) || 0;
 
   // 2 año
   const approvedPercentage2 =
-    (courses.filter((course) => course.year == 2 && course.status == "approved")
-      .length /
-      courses.filter((course) => course.year == 2).length) *
-      100 || 0;
+    Math.round(
+      (courses.filter(
+        (course) => course.year == 2 && course.status == "approved"
+      ).length /
+        courses.filter((course) => course.year == 2).length) *
+        100
+    ) || 0;
 
   // 3 año
   const approvedPercentage3 =
-    (courses.filter((course) => course.year == 3 && course.status == "approved")
-      .length /
-      courses.filter((course) => course.year == 3).length) *
-      100 || 0;
+    Math.round(
+      (courses.filter(
+        (course) => course.year == 3 && course.status == "approved"
+      ).length /
+        courses.filter((course) => course.year == 3).length) *
+        100
+    ) || 0;
 
   // 4 año
   const approvedPercentage4 =
-    (courses.filter((course) => course.year == 4 && course.status == "approved")
-      .length /
-      courses.filter((course) => course.year == 4).length) *
-      100 || 0;
+    Math.round(
+      (courses.filter(
+        (course) => course.year == 4 && course.status == "approved"
+      ).length /
+        courses.filter((course) => course.year == 4).length) *
+        100
+    ) || 0;
 
   // 5 año
   const approvedPercentage5 =
-    (courses.filter((course) => course.year == 5 && course.status == "approved")
-      .length /
-      courses.filter((course) => course.year == 5).length) *
-      100 || 0;
+    Math.round(
+      (courses.filter(
+        (course) => course.year == 5 && course.status == "approved"
+      ).length /
+        courses.filter((course) => course.year == 5).length) *
+        100
+    ) || 0;
 
   // titulo intermedio
   const approvedPercentage123 =
-    (courses.filter(
-      (course) => [1, 2, 3].includes(course.year) && course.status == "approved"
-    ).length /
-      courses.filter((course) => [1, 2, 3].includes(course.year)).length) *
-      100 || 0;
+    Math.round(
+      (courses.filter(
+        (course) =>
+          [1, 2, 3].includes(course.year) && course.status == "approved"
+      ).length /
+        courses.filter((course) => [1, 2, 3].includes(course.year)).length) *
+        100
+    ) || 0;
 
   return (
     <>
