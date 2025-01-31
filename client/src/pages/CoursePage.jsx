@@ -319,7 +319,7 @@ function CoursePage({ showAlert }) {
               value={course.code}
               slotProps={{
                 input: {
-                  readOnly: true,
+                  disabled: true,
                 },
               }}
             />
@@ -335,7 +335,7 @@ function CoursePage({ showAlert }) {
               onChange={handleChangeName}
               slotProps={{
                 input: {
-                  readOnly: !editMode,
+                  disabled: !editMode,
                 },
               }}
             />
@@ -348,11 +348,7 @@ function CoursePage({ showAlert }) {
                 value={status || ""}
                 label="Estado"
                 onChange={handleChangeStatus}
-                slotProps={{
-                  input: {
-                    readOnly: !editMode,
-                  },
-                }}
+                disabled={!editMode}
                 sx={{
                   ".MuiSelect-icon": {
                     display: editMode ? "block" : "none", // ocultar la flecha
@@ -374,11 +370,7 @@ function CoursePage({ showAlert }) {
                 value={grade || ""}
                 label="Nota"
                 onChange={handleChangeGrade}
-                slotProps={{
-                  input: {
-                    readOnly: !editMode,
-                  },
-                }}
+                disabled={!editMode}
                 sx={{
                   ".MuiSelect-icon": {
                     display: editMode ? "block" : "none", // ocultar la flecha
@@ -409,11 +401,7 @@ function CoursePage({ showAlert }) {
                 value={workload || ""}
                 label="Carga Horaria"
                 onChange={handleChangeWorkload}
-                slotProps={{
-                  input: {
-                    readOnly: !editMode,
-                  },
-                }}
+                disabled={!editMode}
                 sx={{
                   ".MuiSelect-icon": {
                     display: editMode ? "block" : "none", // ocultar la flecha
@@ -470,9 +458,38 @@ function CoursePage({ showAlert }) {
                 <TextField
                   {...params}
                   label="Correlativas"
-                  placeholder="Materia"
+                  placeholder={prerequisites.length === 0 ? "Materia" : ""}
                 />
               )}
+              sx={{
+                ...(editMode
+                  ? {}
+                  : {
+                      // Aplicar estilos solo si editMode es false
+                      "& .MuiInputLabel-root": {
+                        color: "gray", // Color de la etiqueta
+                        "&.Mui-focused": {
+                          color: "gray", // Color de la etiqueta al estar enfocado
+                        },
+                      },
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: "gray", // Color del borde normal
+                          borderWidth: "1px", // Ancho del borde normal
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "gray", // Color del borde al hacer hover
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "gray", // Color del borde al estar enfocado
+                          borderWidth: "1px", // Mantener el ancho del borde al enfocar
+                        },
+                      },
+                      "& .MuiAutocomplete-popupIndicator": {
+                        display: "none", // Ocultar el icono del menú desplegable
+                      },
+                    }),
+              }}
             />
           </Grid>
         </Grid>
@@ -559,7 +576,7 @@ function CoursePage({ showAlert }) {
                 onChange={handleChangeBuilding}
                 slotProps={{
                   input: {
-                    readOnly: !editMode,
+                    disabled: !editMode,
                   },
                 }}
               />
@@ -575,7 +592,7 @@ function CoursePage({ showAlert }) {
                 onChange={handleChangeClassroom}
                 slotProps={{
                   input: {
-                    readOnly: !editMode,
+                    disabled: !editMode,
                   },
                 }}
               />
@@ -591,7 +608,7 @@ function CoursePage({ showAlert }) {
                 onChange={handleChangeCommission}
                 slotProps={{
                   input: {
-                    readOnly: !editMode,
+                    disabled: !editMode,
                   },
                 }}
               />
@@ -958,7 +975,7 @@ function CoursePage({ showAlert }) {
             onChange={handleChangeObservations}
             slotProps={{
               input: {
-                readOnly: !editMode,
+                disabled: !editMode,
               },
             }}
           />
