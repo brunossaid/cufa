@@ -23,9 +23,11 @@ import {
 import Grid from "@mui/material/Grid2";
 import OneIcon from "@mui/icons-material/LooksOneRounded";
 import TwoIcon from "@mui/icons-material/LooksTwoRounded";
+import VisibilityIcon from "@mui/icons-material/VisibilityRounded";
 import EditIcon from "@mui/icons-material/EditRounded";
 import AddIcon from "@mui/icons-material/AddRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
+import AlarmIcon from "@mui/icons-material/AlarmRounded";
 import CloseIcon from "@mui/icons-material/CloseRounded";
 import DeleteIcon from "@mui/icons-material/DeleteRounded";
 import PersonIcon from "@mui/icons-material/PersonRounded";
@@ -38,87 +40,93 @@ import { useNavigate } from "react-router-dom";
 function CoursePage({ showAlert }) {
   const { courses, loading } = useAuth();
   const { code } = useParams();
+
+  // si los courses estan cargando
+  if (loading) {
+    return <LoadingX />;
+  }
+
   const navigate = useNavigate();
 
-  // useStates simples
-  const [name, setName] = React.useState("");
-  const [status, setStatus] = React.useState("");
-  const [workload, setWorkload] = React.useState("");
-  const [prerequisites, setPrerequisites] = React.useState([]);
-  const [type, setType] = React.useState("");
-  const [year, setYear] = React.useState(null);
-  const [semester, setSemester] = React.useState(null);
-  const [commission, setCommission] = React.useState("");
-  const [building, setBuilding] = React.useState("");
-  const [classroom, setClassroom] = React.useState("");
-  const [grade, setGrade] = React.useState("");
-  const [modality, setModality] = React.useState("");
-  const [observations, setObservations] = React.useState("");
-
-  // useStates de profesores - horarios
-  const [professors, setProfessors] = React.useState([]);
-  const [editingProffessorIndex, setEditingProffessorIndex] =
-    React.useState(null);
-  const [schedules, setSchedules] = React.useState([]);
-  const [editingScheduleIndex, setEditingScheduleIndex] = React.useState(null);
-
-  // useStates de errores - editMode
-  const [errors, setErrors] = React.useState({});
-  const [editMode, setEditMode] = React.useState(false);
-
-  // dias
-  const days = [
-    { english: "monday", spanish: "Lunes" },
-    { english: "tuesday", spanish: "Martes" },
-    { english: "wednesday", spanish: "Miércoles" },
-    { english: "thursday", spanish: "Jueves" },
-    { english: "friday", spanish: "Viernes" },
-    { english: "saturday", spanish: "Sábado" },
-  ];
-
-  // definir curso
-  const course = courses?.find((course) => course.code === code) || null;
-
-  // resetear datos
-  const resetFields = () => {
-    setName(course.name);
-    setStatus(course.status);
-    setGrade(course.grade);
-    setWorkload(course.workload);
-    setModality(course.modality);
-    setPrerequisites(course.prerequisites);
-    setYear(course.year);
-    setSemester(course.semester);
-    setType(course.type);
-    setCommission(course.commission);
-    setBuilding(course.building);
-    setClassroom(course.classroom);
-    setProfessors(course.professors);
-    setSchedules(course.schedules);
-    setObservations(course.observations);
-  };
-
-  // cargar datos del course
-  React.useEffect(() => {
-    if (course) {
-      resetFields();
-    }
-  }, [course]);
-
-  // verificaciones
-  if (loading) return <LoadingX />;
+  // si no hay cursos
   if (!courses || courses.length === 0) {
     showAlert("No hay materias cargadas", "error");
     navigate("/courses");
-    return null;
+    return;
   }
+  // buscar el curso con el "code" de la URL
+  const course = courses.find((course) => course.code === code);
+
+  // si no se encuentra el curso
   if (!course) {
     showAlert("Materia no encontrada", "error");
     navigate("/courses");
-    return null;
+    return;
   }
 
-  // funciones de profesores y horarios
+  // guardar datos ingresados en variables
+  const [name, setName] = React.useState("");
+  const handleChangeName = (event) => {
+    setName(event.target.value);
+  };
+  const [status, setStatus] = React.useState(course?.status || "");
+  const handleChangeStatus = (event) => {
+    setStatus(event.target.value);
+  };
+  const [workload, setWorkload] = React.useState("");
+  const handleChangeWorkload = (event) => {
+    setWorkload(event.target.value);
+  };
+  const [prerequisites, setPrerequisites] = React.useState([]);
+  const handleChangePrerequisites = (event, value) => {
+    // console.log("value: ", value);
+
+    // guardar solo las IDs de las materias seleccionadas
+    const updatedPrerequisites = value.map((course) => course._id);
+    setPrerequisites(updatedPrerequisites);
+  };
+  const [type, setType] = React.useState("");
+  const handleChangeType = (event, newType) => {
+    setType(newType);
+  };
+  const [year, setYear] = React.useState(null);
+  const handleChangeYear = (event, newYear) => {
+    setYear(newYear);
+  };
+  const [semester, setSemester] = React.useState(null);
+  const handleChangeSemester = (event, newSemester) => {
+    setSemester(newSemester);
+  };
+  const [commission, setCommission] = React.useState("");
+  const handleChangeCommission = (event) => {
+    setCommission(event.target.value);
+  };
+  const [building, setBuilding] = React.useState("");
+  const handleChangeBuilding = (event) => {
+    setBuilding(event.target.value);
+  };
+  const [classroom, setClassroom] = React.useState("");
+  const handleChangeClassroom = (event) => {
+    setClassroom(event.target.value);
+  };
+  const [grade, setGrade] = React.useState("");
+  const handleChangeGrade = (event) => {
+    setGrade(event.target.value);
+  };
+  const [modality, setModality] = React.useState("");
+  const handleChangeModality = (event, newValue) => {
+    setModality(newValue);
+  };
+  const [observations, setObservations] = React.useState("");
+  const handleChangeObservations = (event, newValue) => {
+    setObservations(newValue);
+  };
+
+  // profesores
+  const [professors, setProfessors] = React.useState([]);
+  // que profesor estoy editando
+  const [editingProffessorIndex, setEditingProffessorIndex] =
+    React.useState(null);
   // agregar profesor
   const addProfessor = () => {
     const newProfessor = {
@@ -145,6 +153,10 @@ function CoursePage({ showAlert }) {
     setProfessors(updatedProfessors);
   };
 
+  // horarios
+  const [schedules, setSchedules] = React.useState([]);
+  // que horario estoy editando
+  const [editingScheduleIndex, setEditingScheduleIndex] = React.useState(null);
   // agregar horario
   const addSchedule = () => {
     const newSchedule = {
@@ -171,8 +183,21 @@ function CoursePage({ showAlert }) {
     const updatedSchedules = schedules.filter((_, i) => i !== index);
     setSchedules(updatedSchedules);
   };
+  // dias
+  const days = [
+    { english: "monday", spanish: "Lunes" },
+    { english: "tuesday", spanish: "Martes" },
+    { english: "wednesday", spanish: "Miércoles" },
+    { english: "thursday", spanish: "Jueves" },
+    { english: "friday", spanish: "Viernes" },
+    { english: "saturday", spanish: "Sábado" },
+  ];
 
-  // togglear editMode
+  // manejo de errores
+  const [errors, setErrors] = React.useState({});
+
+  // activar/desactivar modo edicion
+  const [editMode, setEditMode] = React.useState(false);
   const toggleMode = () => {
     setEditMode(!editMode);
   };
@@ -216,6 +241,7 @@ function CoursePage({ showAlert }) {
       Object.entries(editedCourse).filter(([_, value]) => value !== "")
     );
 
+    resetFields();
     setErrors({});
     setEditMode(false);
     try {
@@ -233,47 +259,29 @@ function CoursePage({ showAlert }) {
     setEditMode(false);
   };
 
-  // manejo de cambios en los campos
-  const handleChangeName = (event) => {
-    setName(event.target.value);
+  // resetear datos (de course)
+  const resetFields = () => {
+    setName(course.name);
+    setStatus(course.status);
+    setGrade(course.grade);
+    setWorkload(course.workload);
+    setModality(course.modality);
+    setPrerequisites(course.prerequisites);
+    setYear(course.year);
+    setSemester(course.semester);
+    setType(course.type);
+    setCommission(course.commission);
+    setBuilding(course.building);
+    setClassroom(course.classroom);
+    setProfessors(course.professors);
+    setSchedules(course.schedules);
+    setObservations(course.observations);
   };
-  const handleChangeStatus = (event) => {
-    setStatus(event.target.value);
-  };
-  const handleChangeWorkload = (event) => {
-    setWorkload(event.target.value);
-  };
-  const handleChangePrerequisites = (event, value) => {
-    const updatedPrerequisites = value.map((course) => course._id);
-    setPrerequisites(updatedPrerequisites);
-  };
-  const handleChangeType = (event, newType) => {
-    setType(newType);
-  };
-  const handleChangeYear = (event, newYear) => {
-    setYear(newYear);
-  };
-  const handleChangeSemester = (event, newSemester) => {
-    setSemester(newSemester);
-  };
-  const handleChangeCommission = (event) => {
-    setCommission(event.target.value);
-  };
-  const handleChangeBuilding = (event) => {
-    setBuilding(event.target.value);
-  };
-  const handleChangeClassroom = (event) => {
-    setClassroom(event.target.value);
-  };
-  const handleChangeGrade = (event) => {
-    setGrade(event.target.value);
-  };
-  const handleChangeModality = (event, newValue) => {
-    setModality(newValue);
-  };
-  const handleChangeObservations = (event, newValue) => {
-    setObservations(newValue);
-  };
+
+  // nashee
+  React.useEffect(() => {
+    resetFields();
+  }, [course]);
 
   return (
     <div>
@@ -345,7 +353,7 @@ function CoursePage({ showAlert }) {
             <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select
-                value={status || ""}
+                value={status}
                 label="Estado"
                 onChange={handleChangeStatus}
                 slotProps={{
@@ -371,7 +379,7 @@ function CoursePage({ showAlert }) {
             <FormControl fullWidth>
               <InputLabel>Nota</InputLabel>
               <Select
-                value={grade || ""}
+                value={grade}
                 label="Nota"
                 onChange={handleChangeGrade}
                 slotProps={{
@@ -406,7 +414,7 @@ function CoursePage({ showAlert }) {
             <FormControl fullWidth error={!!errors.workload}>
               <InputLabel>Carga Horaria</InputLabel>
               <Select
-                value={workload || ""}
+                value={workload}
                 label="Carga Horaria"
                 onChange={handleChangeWorkload}
                 slotProps={{

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   Autocomplete,
@@ -23,9 +23,11 @@ import {
 import Grid from "@mui/material/Grid2";
 import OneIcon from "@mui/icons-material/LooksOneRounded";
 import TwoIcon from "@mui/icons-material/LooksTwoRounded";
+import VisibilityIcon from "@mui/icons-material/VisibilityRounded";
 import EditIcon from "@mui/icons-material/EditRounded";
 import AddIcon from "@mui/icons-material/AddRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
+import AlarmIcon from "@mui/icons-material/AlarmRounded";
 import CloseIcon from "@mui/icons-material/CloseRounded";
 import DeleteIcon from "@mui/icons-material/DeleteRounded";
 import PersonIcon from "@mui/icons-material/PersonRounded";
@@ -33,14 +35,13 @@ import GroupsIcon from "@mui/icons-material/GroupsRounded";
 import HeadsetIcon from "@mui/icons-material/HeadsetMicRounded";
 import { updateCourseRequest } from "../api/courses";
 import LoadingX from "../components/LoadingX";
-import { useNavigate } from "react-router-dom";
 
 function CoursePage({ showAlert }) {
   const { courses, loading } = useAuth();
   const { code } = useParams();
   const navigate = useNavigate();
 
-  // useStates simples
+  // 📌 Estados principales
   const [name, setName] = React.useState("");
   const [status, setStatus] = React.useState("");
   const [workload, setWorkload] = React.useState("");
@@ -55,57 +56,25 @@ function CoursePage({ showAlert }) {
   const [modality, setModality] = React.useState("");
   const [observations, setObservations] = React.useState("");
 
-  // useStates de profesores - horarios
+  // 📌 Profesores
   const [professors, setProfessors] = React.useState([]);
   const [editingProffessorIndex, setEditingProffessorIndex] =
     React.useState(null);
+
+  // 📌 Horarios
   const [schedules, setSchedules] = React.useState([]);
   const [editingScheduleIndex, setEditingScheduleIndex] = React.useState(null);
 
-  // useStates de errores - editMode
+  // 📌 Manejo de errores
   const [errors, setErrors] = React.useState({});
+
+  // 📌 Activar/desactivar modo edición
   const [editMode, setEditMode] = React.useState(false);
 
-  // dias
-  const days = [
-    { english: "monday", spanish: "Lunes" },
-    { english: "tuesday", spanish: "Martes" },
-    { english: "wednesday", spanish: "Miércoles" },
-    { english: "thursday", spanish: "Jueves" },
-    { english: "friday", spanish: "Viernes" },
-    { english: "saturday", spanish: "Sábado" },
-  ];
-
-  // definir curso
+  // 📌 Definir curso
   const course = courses?.find((course) => course.code === code) || null;
 
-  // resetear datos
-  const resetFields = () => {
-    setName(course.name);
-    setStatus(course.status);
-    setGrade(course.grade);
-    setWorkload(course.workload);
-    setModality(course.modality);
-    setPrerequisites(course.prerequisites);
-    setYear(course.year);
-    setSemester(course.semester);
-    setType(course.type);
-    setCommission(course.commission);
-    setBuilding(course.building);
-    setClassroom(course.classroom);
-    setProfessors(course.professors);
-    setSchedules(course.schedules);
-    setObservations(course.observations);
-  };
-
-  // cargar datos del course
-  React.useEffect(() => {
-    if (course) {
-      resetFields();
-    }
-  }, [course]);
-
-  // verificaciones
+  // 📌 Verificaciones
   if (loading) return <LoadingX />;
   if (!courses || courses.length === 0) {
     showAlert("No hay materias cargadas", "error");
@@ -118,81 +87,61 @@ function CoursePage({ showAlert }) {
     return null;
   }
 
-  // funciones de profesores y horarios
-  // agregar profesor
+  // 📌 Funciones de manejo de profesores
   const addProfessor = () => {
-    const newProfessor = {
-      name: "",
-      email: "",
-      observations: "",
-    };
-    setProfessors([...professors, newProfessor]);
-    setEditingProffessorIndex(professors.length); // ponemos profesor nuevo en modo edicion
+    setProfessors([...professors, { name: "", email: "", observations: "" }]);
+    setEditingProffessorIndex(professors.length);
   };
-  // editar profesor
+
   const updateProfessorField = (index, field, value) => {
     const updatedProfessors = [...professors];
     updatedProfessors[index][field] = value;
     setProfessors(updatedProfessors);
   };
-  // guardar  profesor
-  const saveProfessor = (index) => {
-    setEditingProffessorIndex(null);
-  };
-  // eliminar profesor
+
+  const saveProfessor = () => setEditingProffessorIndex(null);
   const deleteProfessor = (index) => {
-    const updatedProfessors = professors.filter((_, i) => i !== index);
-    setProfessors(updatedProfessors);
+    setProfessors(professors.filter((_, i) => i !== index));
   };
 
-  // agregar horario
+  // 📌 Funciones de manejo de horarios
   const addSchedule = () => {
-    const newSchedule = {
-      startTime: "",
-      endTime: "",
-      day: "",
-      modality: "presential",
-    };
-    setSchedules([...schedules, newSchedule]);
-    setEditingScheduleIndex(schedules.length); // nuevo horario en modo edición
+    setSchedules([
+      ...schedules,
+      { startTime: "", endTime: "", day: "", modality: "presential" },
+    ]);
+    setEditingScheduleIndex(schedules.length);
   };
-  // editar horario
+
   const updateScheduleField = (index, field, value) => {
     const updatedSchedules = [...schedules];
     updatedSchedules[index][field] = value;
     setSchedules(updatedSchedules);
   };
-  // guardar horario
-  const saveSchedule = (index) => {
-    setEditingScheduleIndex(null); // salir de modo edición
-  };
-  // eliminar horario
+
+  const saveSchedule = () => setEditingScheduleIndex(null);
   const deleteSchedule = (index) => {
-    const updatedSchedules = schedules.filter((_, i) => i !== index);
-    setSchedules(updatedSchedules);
+    setSchedules(schedules.filter((_, i) => i !== index));
   };
 
-  // togglear editMode
-  const toggleMode = () => {
-    setEditMode(!editMode);
-  };
+  // 📌 Funciones de manejo de cambios
+  const toggleMode = () => setEditMode(!editMode);
 
-  // guardar cambios
   const saveChanges = () => {
     const newErrors = {};
 
-    // verificar cada campo, y crear un error si esta vacio
+    // Verificar cada campo y crear un error si está vacío
     if (!code) newErrors.code = "El código es obligatorio.";
     if (!name) newErrors.name = "El nombre es obligatorio.";
     if (!workload) newErrors.workload = "La carga horaria es obligatoria.";
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors); // establecer errores en "errors"
+      setErrors(newErrors);
       showAlert("Falta Completar Datos", "error");
-      return; // salir si hay errores
+      return;
     }
 
-    // guardamos SOLO los datos que se modificaron
+    // Guardamos SOLO los datos que se modificaron
     const editedCourse = {};
     if (name !== course.name) editedCourse.name = name;
     if (workload !== course.workload) editedCourse.workload = workload;
@@ -211,13 +160,15 @@ function CoursePage({ showAlert }) {
       editedCourse.observations = observations;
     if (professors !== course.professors) editedCourse.professors = professors;
 
-    // eliminar campos vacios
+    // Eliminar campos vacíos
     const filteredCourse = Object.fromEntries(
       Object.entries(editedCourse).filter(([_, value]) => value !== "")
     );
 
+    resetFields();
     setErrors({});
     setEditMode(false);
+
     try {
       updateCourseRequest(course._id, filteredCourse);
       showAlert("Materia Editada", "info", <DoneIcon />);
@@ -227,13 +178,30 @@ function CoursePage({ showAlert }) {
     }
   };
 
-  // cancelar cambios
   const cancelChanges = () => {
-    resetFields(); // resetear datos
+    resetFields();
     setEditMode(false);
   };
 
-  // manejo de cambios en los campos
+  const resetFields = () => {
+    setName(course.name);
+    setStatus(course.status);
+    setGrade(course.grade);
+    setWorkload(course.workload);
+    setModality(course.modality);
+    setPrerequisites(course.prerequisites);
+    setYear(course.year);
+    setSemester(course.semester);
+    setType(course.type);
+    setCommission(course.commission);
+    setBuilding(course.building);
+    setClassroom(course.classroom);
+    setProfessors(course.professors);
+    setSchedules(course.schedules);
+    setObservations(course.observations);
+  };
+
+  // 📌 Manejo de cambios de campos
   const handleChangeName = (event) => {
     setName(event.target.value);
   };
@@ -345,7 +313,7 @@ function CoursePage({ showAlert }) {
             <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select
-                value={status || ""}
+                value={status}
                 label="Estado"
                 onChange={handleChangeStatus}
                 slotProps={{
@@ -371,7 +339,7 @@ function CoursePage({ showAlert }) {
             <FormControl fullWidth>
               <InputLabel>Nota</InputLabel>
               <Select
-                value={grade || ""}
+                value={grade}
                 label="Nota"
                 onChange={handleChangeGrade}
                 slotProps={{
@@ -406,7 +374,7 @@ function CoursePage({ showAlert }) {
             <FormControl fullWidth error={!!errors.workload}>
               <InputLabel>Carga Horaria</InputLabel>
               <Select
-                value={workload || ""}
+                value={workload}
                 label="Carga Horaria"
                 onChange={handleChangeWorkload}
                 slotProps={{
@@ -474,6 +442,29 @@ function CoursePage({ showAlert }) {
                 />
               )}
             />
+            {/* 
+            <Autocomplete
+              multiple
+              name="prerequisites"
+              options={courses.filter(
+                (course) =>
+                  !prerequisites.some(
+                    (selected) => selected.code === course.code
+                  )
+              )}
+              getOptionLabel={(option) => option.name}
+              value={prerequisites}
+              onChange={handleChangePrerequisites}
+              readOnly={!editMode}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Correlativas"
+                  placeholder="Materia"
+                />
+              )}
+            />
+            */}
           </Grid>
         </Grid>
 
