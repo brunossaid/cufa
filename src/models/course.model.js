@@ -1,5 +1,66 @@
 import mongoose from "mongoose";
 
+// esquema de materias (COURSES)
+const courseSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    workload: {
+      type: Number, // carga horaria en horas
+      required: true,
+    },
+    modality: {
+      type: String,
+      enum: ["presential", "virtual", "mixed"], // modalidad
+      required: true,
+    },
+    prerequisites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "course", // referencia a la colección "course"
+      },
+    ],
+    year: {
+      type: Number, // año en el que se debería cursar
+      enum: [1, 2, 3, 4, 5],
+      required: true,
+    },
+    semester: {
+      type: Number, // cuatrimestre en el que se debería cursar
+      enum: [1, 2],
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["mandatory", "optional"], // obligatoria - optativa
+      required: true,
+    },
+    color: {
+      type: String,
+      trim: true, // color
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  { timestamps: true } // createdAt - updatedAt
+);
+
+export default mongoose.model("course", courseSchema);
+
+/*
+import mongoose from "mongoose";
+
 // esquema de profesores
 const professorSchema = new mongoose.Schema({
   name: {
@@ -114,8 +175,7 @@ const courseSchema = new mongoose.Schema(
           enum: [1, 2], // primer cuatrimestre(1) - segundo cuatrimestre(2)
         },
         status: {
-          type: String,
-          enum: ["approved", "promoted", "pending", "in_progress"], // estado
+          type: Boolean,
         },
       },
     ],
@@ -142,3 +202,4 @@ const courseSchema = new mongoose.Schema(
 );
 
 export default mongoose.model("course", courseSchema);
+*/

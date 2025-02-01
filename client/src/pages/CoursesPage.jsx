@@ -805,496 +805,61 @@ function CoursesPage({ showAlert }) {
         }}
       >
         <DialogTitle>Agregar Nueva Materia</DialogTitle>
-        {page === 1 ? (
-          // pagina 1
-          <DialogContent sx={{ paddingBottom: 1 }}>
-            <Grid container spacing={2}>
-              {/* fila 1: código - nombre */}
-              <Grid container size={12} sx={{ marginTop: 0.7 }}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField
-                    label="Código"
-                    name="code"
-                    fullWidth
-                    autoComplete="off"
-                    value={code}
-                    onChange={handleChangeCode}
-                    error={!!errors.code}
-                    helperText={errors.code}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 8 }}>
-                  <TextField
-                    label="Nombre"
-                    name="name"
-                    fullWidth
-                    autoComplete="off"
-                    value={name}
-                    onChange={handleChangeName}
-                    error={!!errors.name}
-                    helperText={errors.name}
-                  />
-                </Grid>
-              </Grid>
 
-              {/* fila 2: carga horaria - estado */}
-              <Grid container size={12}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <FormControl fullWidth error={!!errors.workload}>
-                    <InputLabel>Carga Horaria</InputLabel>
-                    <Select
-                      value={workload}
-                      label="Carga Horaria"
-                      onChange={handleChangeWorkload}
-                    >
-                      {Array.from({ length: 16 }, (_, i) => (
-                        <MenuItem key={i + 1} value={i + 1}>
-                          {i + 1}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.workload && (
-                      <FormHelperText color={"red"}>
-                        {errors.workload}
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, md: 8 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Estado</InputLabel>
-                    <Select
-                      value={status}
-                      label="Estado"
-                      onChange={handleChangeStatus}
-                    >
-                      <MenuItem value={"approved"}>Aprobada</MenuItem>
-                      <MenuItem value={"promoted"}>Promocionada</MenuItem>
-                      <MenuItem value={"pending"}>Pendiente</MenuItem>
-                      <MenuItem value={"in_progress"}>En Curso</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-
-              {/* fila 3: correlativas */}
-              {/* codigo nuevo */}
-              <Grid size={12}>
-                <Autocomplete
-                  multiple
-                  name="prerequisites"
-                  options={courses.filter(
-                    (course) =>
-                      !prerequisites.some((selected) => selected === course._id)
-                  )}
-                  getOptionLabel={(option) => `(${option.code}) ${option.name}`}
-                  value={courses.filter((course) =>
-                    prerequisites.includes(course._id)
-                  )}
-                  onChange={handleChangePrerequisites}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Correlativas"
-                      placeholder="Materia"
-                    />
-                  )}
-                />
-              </Grid>
-              {/* fila 4: año - cuatrimestre - tipo */}
-              <Grid container size={12}>
-                <Grid size={{ xs: 12, sm: 12, md: 8, lg: 5 }}>
-                  <Typography gutterBottom>Año</Typography>
-                  <ToggleButtonGroup
-                    value={year}
-                    exclusive
-                    onChange={handleChangeYear}
-                    fullWidth={true}
-                  >
-                    <ToggleButton value={1}>1º</ToggleButton>
-                    <ToggleButton value={2}>2º</ToggleButton>
-                    <ToggleButton value={3}>3º</ToggleButton>
-                    <ToggleButton value={4}>4º</ToggleButton>
-                    <ToggleButton value={5}>5º</ToggleButton>
-                  </ToggleButtonGroup>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 12, md: 4, lg: 2 }}>
-                  <Typography gutterBottom>Cuatrimestre</Typography>
-                  <ToggleButtonGroup
-                    value={semester}
-                    exclusive
-                    onChange={handleChangeSemester}
-                    fullWidth={true}
-                  >
-                    <ToggleButton value={1}>
-                      <OneIcon />
-                    </ToggleButton>
-                    <ToggleButton value={2}>
-                      <TwoIcon />
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 12, lg: 5 }}>
-                  <Typography gutterBottom>Tipo</Typography>
-                  <ToggleButtonGroup
-                    value={type}
-                    exclusive
-                    onChange={handleChangeType}
-                    fullWidth={true}
-                  >
-                    <ToggleButton value="mandatory">Obligatoria</ToggleButton>
-                    <ToggleButton value="optional">Optativa</ToggleButton>
-                  </ToggleButtonGroup>
-                </Grid>
-              </Grid>
-            </Grid>
-          </DialogContent>
-        ) : (
-          // pagina 2
-          <DialogContent sx={{ paddingBottom: 1 }}>
-            {/* fila 1 - profesor */}
-            <Box
-              display="flex"
-              flexDirection="column"
-              sx={{
-                border: "1px solid #5B5B5B",
-                borderRadius: "4px",
-                paddingX: "12px",
-                paddingY: "6px",
-                marginBottom: 1.2,
-              }}
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-              >
-                <Typography>
-                  {professors.length <= 1 ? "Profesor" : "Profesores"}
-                </Typography>
-                <Tooltip title="Agregar Profesor">
-                  <IconButton onClick={addProfessor}>
-                    <AddIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              <List sx={{ paddingY: 0 }}>
-                {professors.map((professor, index) => (
-                  <ListItem
-                    key={index}
-                    alignItems="flex-start"
-                    secondaryAction={
-                      <>
-                        {editingProffessorIndex === index ? (
-                          <Tooltip title="Guardar">
-                            <IconButton
-                              edge="end"
-                              sx={{ marginRight: 1 }}
-                              onClick={() => saveProfessor(index)}
-                            >
-                              <DoneIcon />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Editar">
-                            <IconButton
-                              edge="end"
-                              sx={{ marginRight: 1 }}
-                              onClick={() => setEditingProffessorIndex(index)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title="Eliminar">
-                          <IconButton
-                            edge="end"
-                            onClick={() => deleteProfessor(index)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    }
-                  >
-                    <ListItemAvatar>
-                      <PersonIcon fontSize="large" />
-                    </ListItemAvatar>
-                    {editingProffessorIndex === index ? (
-                      <Box
-                        display="flex"
-                        flexDirection="column"
-                        gap={1.5}
-                        sx={{ width: "80%" }}
-                      >
-                        <TextField
-                          label="Nombre"
-                          value={professor.name}
-                          onChange={(e) =>
-                            updateProfessorField(index, "name", e.target.value)
-                          }
-                          size="small"
-                        />
-                        <TextField
-                          label="Email"
-                          value={professor.email}
-                          onChange={(e) =>
-                            updateProfessorField(index, "email", e.target.value)
-                          }
-                          size="small"
-                        />
-                      </Box>
-                    ) : (
-                      <ListItemText
-                        primary={professor.name}
-                        secondary={professor.email}
-                      />
-                    )}
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-
-            {/* fila 2: comision - edificio - aula */}
-            <Grid container size={12} spacing={1}>
-              <Grid size={{ xs: 12, sm: 12, lg: 3 }}>
+        <DialogContent sx={{ paddingBottom: 1 }}>
+          <Grid container spacing={2}>
+            {/* fila 1: código - nombre */}
+            <Grid container size={12} sx={{ marginTop: 0.7 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <TextField
-                  label="Comision"
-                  name="commission"
+                  label="Código"
+                  name="code"
                   fullWidth
                   autoComplete="off"
-                  value={commission}
-                  onChange={handleChangeCommission}
+                  value={code}
+                  onChange={handleChangeCode}
+                  error={!!errors.code}
+                  helperText={errors.code}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 7, lg: 6 }}>
+              <Grid size={{ xs: 12, md: 8 }}>
                 <TextField
-                  label="Edificio"
-                  name="building"
+                  label="Nombre"
+                  name="name"
                   fullWidth
                   autoComplete="off"
-                  value={building}
-                  onChange={handleChangeBuilding}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 5, lg: 3 }}>
-                <TextField
-                  label="Aula"
-                  name="classroom"
-                  fullWidth
-                  autoComplete="off"
-                  value={classroom}
-                  onChange={handleChangeClassroom}
+                  value={name}
+                  onChange={handleChangeName}
+                  error={!!errors.name}
+                  helperText={errors.name}
                 />
               </Grid>
             </Grid>
 
-            {/* fila 3 - horarios */}
-            <Box
-              display="flex"
-              flexDirection="column"
-              sx={{
-                border: "1px solid #5B5B5B",
-                borderRadius: "4px",
-                paddingX: "12px",
-                paddingY: "6px",
-                marginTop: 1.2,
-              }}
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-              >
-                <Typography>
-                  {schedules.length <= 1 ? "Horario" : "Horarios"}
-                </Typography>
-                <Tooltip title="Agregar Horario">
-                  <IconButton onClick={addSchedule}>
-                    <AddIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              <List sx={{ paddingY: 0 }}>
-                {schedules.map((schedule, index) => (
-                  <ListItem
-                    key={index}
-                    alignItems="flex-start"
-                    secondaryAction={
-                      <>
-                        {editingScheduleIndex === index ? (
-                          <Tooltip title="Guardar">
-                            <IconButton
-                              edge="end"
-                              sx={{ marginRight: 1 }}
-                              onClick={() => saveSchedule(index)}
-                            >
-                              <DoneIcon />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Editar">
-                            <IconButton
-                              edge="end"
-                              sx={{ marginRight: 1 }}
-                              onClick={() => setEditingScheduleIndex(index)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title="Eliminar">
-                          <IconButton
-                            edge="end"
-                            onClick={() => deleteSchedule(index)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    }
-                  >
-                    <ListItemAvatar>
-                      {schedule.modality === "virtual" ? (
-                        <Tooltip title="Virtual">
-                          <HeadsetIcon fontSize="large" />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title="Presencial">
-                          <GroupsIcon fontSize="large" />
-                        </Tooltip>
-                      )}
-                    </ListItemAvatar>
-                    {editingScheduleIndex === index ? (
-                      <Box
-                        display="flex"
-                        flexDirection="column"
-                        gap={1.5}
-                        sx={{ width: "80%" }}
-                      >
-                        <Grid container size={12} spacing={1.5}>
-                          <Grid container size={12} spacing={1.5}>
-                            <Grid size={{ sm: 12, md: 6 }}>
-                              <TextField
-                                label="Hora Inicio"
-                                value={schedule.startTime}
-                                onChange={(e) =>
-                                  updateScheduleField(
-                                    index,
-                                    "startTime",
-                                    e.target.value
-                                  )
-                                }
-                                size="small"
-                                fullWidth
-                              />
-                            </Grid>
-                            <Grid size={{ sm: 12, md: 6 }}>
-                              <TextField
-                                label="Hora Fin"
-                                value={schedule.endTime}
-                                onChange={(e) =>
-                                  updateScheduleField(
-                                    index,
-                                    "endTime",
-                                    e.target.value
-                                  )
-                                }
-                                size="small"
-                                fullWidth
-                              />
-                            </Grid>
-                          </Grid>
-
-                          <Grid container size={12} spacing={1.5}>
-                            <Grid size={{ sm: 12, md: 6 }}>
-                              <Autocomplete
-                                options={days}
-                                getOptionLabel={(option) => option.spanish} // mostrar en español
-                                value={
-                                  days.find(
-                                    (day) => day.english === schedule.day
-                                  ) || null
-                                }
-                                onChange={(event, newValue) => {
-                                  updateScheduleField(
-                                    index,
-                                    "day",
-                                    newValue?.english || ""
-                                  ); // guardar en ingles
-                                }}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    label="Día"
-                                    size="small"
-                                  />
-                                )}
-                              />
-                            </Grid>
-                            <Grid size={{ sm: 12, md: 6 }}>
-                              <ToggleButtonGroup
-                                value={schedule.modality}
-                                exclusive
-                                onChange={(event, newValue) =>
-                                  updateScheduleField(
-                                    index,
-                                    "modality",
-                                    newValue
-                                  )
-                                }
-                                size="small"
-                                fullWidth
-                              >
-                                <ToggleButton value="presential">
-                                  Presencial
-                                </ToggleButton>
-                                <ToggleButton value="virtual">
-                                  Virtual
-                                </ToggleButton>
-                              </ToggleButtonGroup>
-                            </Grid>
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ) : (
-                      <ListItemText
-                        primary={
-                          days.find((day) => day.english === schedule.day)
-                            ?.spanish || schedule.day
-                        }
-                        secondary={`${schedule.startTime} - ${schedule.endTime}`}
-                      />
-                    )}
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-
-            {/* fila 4: nota - modalidad */}
-            <Grid container size={12} spacing={1} marginTop={1.5}>
-              <Grid size={{ xs: 12, sm: 12, lg: 4 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Nota</InputLabel>
+            {/* fila 2: carga horaria - estado */}
+            <Grid container size={12}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth error={!!errors.workload}>
+                  <InputLabel>Carga Horaria</InputLabel>
                   <Select
-                    value={grade}
-                    label="Nota"
-                    onChange={handleChangeGrade}
+                    value={workload}
+                    label="Carga Horaria"
+                    onChange={handleChangeWorkload}
                   >
-                    <MenuItem value={1}>1</MenuItem>
-                    <MenuItem value={2}>2</MenuItem>
-                    <MenuItem value={3}>3</MenuItem>
-                    <MenuItem value={4}>4</MenuItem>
-                    <MenuItem value={5}>5</MenuItem>
-                    <MenuItem value={6}>6</MenuItem>
-                    <MenuItem value={7}>7</MenuItem>
-                    <MenuItem value={8}>8</MenuItem>
-                    <MenuItem value={9}>9</MenuItem>
-                    <MenuItem value={10}>10</MenuItem>
+                    {Array.from({ length: 16 }, (_, i) => (
+                      <MenuItem key={i + 1} value={i + 1}>
+                        {i + 1}
+                      </MenuItem>
+                    ))}
                   </Select>
+                  {errors.workload && (
+                    <FormHelperText color={"red"}>
+                      {errors.workload}
+                    </FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, md: 8 }}>
+              <Grid size={{ xs: 12, md: 8 }}>
                 <ToggleButtonGroup
                   value={modality}
                   exclusive
@@ -1308,53 +873,95 @@ function CoursesPage({ showAlert }) {
                 </ToggleButtonGroup>
               </Grid>
             </Grid>
-          </DialogContent>
-        )}
 
+            {/* fila 3: correlativas */}
+            <Grid size={12}>
+              <Autocomplete
+                multiple
+                name="prerequisites"
+                options={courses.filter(
+                  (course) =>
+                    !prerequisites.some((selected) => selected === course._id)
+                )}
+                getOptionLabel={(option) => `(${option.code}) ${option.name}`}
+                value={courses.filter((course) =>
+                  prerequisites.includes(course._id)
+                )}
+                onChange={handleChangePrerequisites}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Correlativas"
+                    placeholder="Materia"
+                  />
+                )}
+              />
+            </Grid>
+            {/* fila 4: año - cuatrimestre - tipo */}
+            <Grid container size={12}>
+              <Grid size={{ xs: 12, sm: 12, md: 8, lg: 5 }}>
+                <Typography gutterBottom>Año</Typography>
+                <ToggleButtonGroup
+                  value={year}
+                  exclusive
+                  onChange={handleChangeYear}
+                  fullWidth={true}
+                >
+                  <ToggleButton value={1}>1º</ToggleButton>
+                  <ToggleButton value={2}>2º</ToggleButton>
+                  <ToggleButton value={3}>3º</ToggleButton>
+                  <ToggleButton value={4}>4º</ToggleButton>
+                  <ToggleButton value={5}>5º</ToggleButton>
+                </ToggleButtonGroup>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 12, md: 4, lg: 2 }}>
+                <Typography gutterBottom>Cuatrimestre</Typography>
+                <ToggleButtonGroup
+                  value={semester}
+                  exclusive
+                  onChange={handleChangeSemester}
+                  fullWidth={true}
+                >
+                  <ToggleButton value={1}>
+                    <OneIcon />
+                  </ToggleButton>
+                  <ToggleButton value={2}>
+                    <TwoIcon />
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 12, lg: 5 }}>
+                <Typography gutterBottom>Tipo</Typography>
+                <ToggleButtonGroup
+                  value={type}
+                  exclusive
+                  onChange={handleChangeType}
+                  fullWidth={true}
+                >
+                  <ToggleButton value="mandatory">Obligatoria</ToggleButton>
+                  <ToggleButton value="optional">Optativa</ToggleButton>
+                </ToggleButtonGroup>
+              </Grid>
+            </Grid>
+          </Grid>
+        </DialogContent>
         <DialogActions
           sx={{
             marginX: 2,
             marginY: 1,
           }}
         >
-          {page === 2 && (
-            <Button
-              onClick={handleBack}
-              variant="contained"
-              color="primary"
-              sx={{ marginRight: "auto" }}
-            >
-              Atrás
-            </Button>
-          )}
-
           <Button onClick={handleCloseDialog} variant="contained" color="error">
             Cancelar
           </Button>
 
-          {page === 1 ? (
-            status === "pending" ? (
-              <Button variant="contained" color="success" onClick={handleSave}>
-                Guardar
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleNext} // Va a la siguiente página
-              >
-                Siguiente
-              </Button>
-            )
-          ) : (
-            <Button
-              variant="contained"
-              color="success"
-              onClick={handleSave} // Guarda los cambios
-            >
-              Guardar
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleSave} // guarda los cambios
+          >
+            Guardar
+          </Button>
         </DialogActions>
       </Dialog>
     </div>

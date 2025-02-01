@@ -7,6 +7,7 @@ import {
 } from "../api/auth";
 import { getCoursesRequest } from "../api/courses";
 import { getPlansRequest } from "../api/plans";
+import { getPeriodsRequest } from "../api/periods";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -40,10 +41,9 @@ export const AuthProvider = ({ children }) => {
 
     Cookies.set("token", res.data.token);
 
-    console.log("res.data: ", res.data);
-
     await fetchCourses(res.data);
     await fetchPlans(res.data);
+    await fetchPeriods(res.data);
 
     console.log("signin res: ", res.data);
   };
@@ -80,6 +80,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // cursadas
+  const [periods, setPeriods] = useState([]);
+  const fetchPeriods = async (user) => {
+    try {
+      const res = await getPeriodsRequest(user.id);
+      setPeriods(res.data);
+    } catch (error) {
+      console.log("Error fetching periods: ", error);
+    }
+  };
+
   // almacenar cookie para no desloguearse al actualizar
   useEffect(() => {
     const checkLogin = async () => {
@@ -112,6 +123,7 @@ export const AuthProvider = ({ children }) => {
           // cargar datos
           await fetchCourses(res.data);
           await fetchPlans(res.data);
+          await fetchPeriods(res.data);
         }
       } catch (error) {
         console.log("error: ", error);
@@ -137,6 +149,8 @@ export const AuthProvider = ({ children }) => {
         setCourses,
         plans,
         setPlans,
+        periods,
+        setPeriods,
         logout,
         loading,
       }}

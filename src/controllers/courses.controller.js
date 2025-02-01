@@ -82,6 +82,16 @@ export const updateCourse = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    // si 'periods' está incluido en los datos a actualizar, lo ordenamos
+    if (updateData.periods) {
+      updateData.periods = updateData.periods.sort((a, b) => {
+        // por año
+        if (a.year !== b.year) return a.year - b.year;
+        // por cuatrimestre
+        return a.semester - b.semester;
+      });
+    }
+
     const updatedCourse = await course.findByIdAndUpdate(id, updateData, {
       new: true,
     });

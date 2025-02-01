@@ -126,7 +126,7 @@ const HomePage = () => {
                   sx={{ paddingLeft: 10 }}
                 />
                 <Typography variant="h3" sx={{ textAlign: "center", mt: 4 }}>
-                  {approvedCount} / {pendingCount}
+                  {approvedCount} / {pendingCount + approvedCount}
                 </Typography>
               </Box>
             </Grid>
