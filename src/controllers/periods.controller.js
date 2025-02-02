@@ -3,7 +3,9 @@ import Period from "../models/period.model.js";
 // obtener todos los períodos
 export const getPeriods = async (req, res) => {
   try {
-    const periods = await Period.find({ user: req.user.id }).populate("user");
+    const periods = await Period.find({ user: req.user.id })
+      .populate("user")
+      .sort({ year: 1, semester: 1 }); // ordena por year y semester
     res.json(periods);
   } catch (error) {
     return res.status(500).json({ message: error.message });

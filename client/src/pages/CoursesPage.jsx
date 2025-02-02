@@ -55,6 +55,7 @@ import {
   updateCourseRequest,
 } from "../api/courses";
 import { useNavigate } from "react-router-dom";
+import LoadingX from "../components/LoadingX";
 
 // datos de las columnas
 const columns = [
@@ -74,7 +75,7 @@ const columns = [
   },
   {
     width: "15%",
-    label: "Accion",
+    label: "Acciones",
     dataKey: "action",
     align: "center",
   },
@@ -124,62 +125,40 @@ const StyledPaper = styled(Paper)`
   }
 `;
 
-// componente principal
 function CoursesPage({ showAlert }) {
-  // cambiar entre modo visualizacion/edicion
-  const [mode, setMode] = React.useState("view");
-  const toggleMode = () => {
-    setMode((prevMode) => (prevMode === "view" ? "edit" : "view"));
-  };
+  // traer datos del contexto
+  const { courses, setCourses, periods, user, loading } = useAuth();
 
-  // cambiar status de las materias
-  const toggleStatus = async (code) => {
-    try {
-      // encontrar la fila que se va a actualizar
-      const updatedRow = rows.find((row) => row.code === code);
-      if (!updatedRow) {
-        return;
+  // buscar entre los periods el status
+  const getStatus = (courseId) => {
+    for (let i = periods.length - 1; i >= 0; i--) {
+      const period = periods[i];
+      const course = period.courses.find((c) => c.courseId === courseId);
+
+      if (course) {
+        if (course.courseId === "679eba2451b17bc19946f800") {
+        }
+        return course.status;
       }
-
-      // calcular el nuevo estado
-      const newStatus =
-        updatedRow.status === "approved" || updatedRow.status === "promoted"
-          ? "in_progress"
-          : updatedRow.status === "in_progress"
-          ? "pending"
-          : "approved";
-
-      // actualizar la base de datos
-      await updateCourseRequest(updatedRow._id, { status: newStatus });
-
-      // actualizar el estado local
-      setRows((prevRows) =>
-        prevRows.map((row) =>
-          row.code === code ? { ...row, status: newStatus } : row
-        )
-      );
-
-      console.log(updatedRow.name, "status cambiado a:", newStatus);
-
-      // recargar courses
-      fetchCourses();
-    } catch (error) {
-      console.error("Error al actualizar el status: ", error);
-      showAlert("Error", "error");
     }
+
+    return "pending"; // default
   };
 
   // determinar el color de la fila segun el status
-  const getRowBackgroundColor = (status) => {
-    switch (status) {
+  const getRowBackgroundColor = (courseId) => {
+    const lastStatus = getStatus(courseId);
+
+    // determinar el color de la fila
+    switch (lastStatus) {
       case "approved":
       case "promoted":
         return "#00AFFF"; // celeste
       case "in_progress":
         return "#FF6C24"; // naranja
-      case "pending":
+      case "disapproved":
       default:
-        return "inherit";
+        return "inherit"; // sin color específico
     }
   };
 
@@ -191,7 +170,7 @@ function CoursesPage({ showAlert }) {
   };
 
   // como se renderizan las filas en la tabla
-  const rowContent = (_index, row, mode) => {
+  const rowContent = (_index, row) => {
     switch (row.type) {
       case "year":
         return (
@@ -242,37 +221,44 @@ function CoursesPage({ showAlert }) {
           <>
             <TableCell
               align="center"
-              style={{ backgroundColor: getRowBackgroundColor(row.status) }}
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
             >
               {row.code}
             </TableCell>
+
             <TableCell
               align="left"
-              style={{ backgroundColor: getRowBackgroundColor(row.status) }}
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
             >
               {row.name}
             </TableCell>
+
             <TableCell
               align="center"
-              style={{ backgroundColor: getRowBackgroundColor(row.status) }}
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
             >
               {row.workload}
             </TableCell>
+
             <TableCell
               align="center"
               style={{
                 backgroundColor:
-                  row.status === "approved"
-                    ? getRowBackgroundColor(row.status)
+                  getStatus(row._id) === "approved" ||
+                  getStatus(row._id) === "promoted"
+                    ? getRowBackgroundColor(row._id)
                     : (row.prerequisites || []).length === 0 ||
                       row.prerequisites.every((prerequisiteId) => {
                         const course = courses.find(
-                          (course) => course._id === prerequisiteId
+                          (c) => c._id === prerequisiteId
                         );
-                        return course ? course.status === "approved" : false;
+                        return course
+                          ? getStatus(course._id) === "approved" ||
+                              getStatus(course._id) === "promoted"
+                          : false;
                       })
                     ? "green" // verde si no hay prerequisites o si todas están aprobadas
-                    : getRowBackgroundColor(row.status), // color predeterminado
+                    : getRowBackgroundColor(row._id), // color predeterminado
               }}
             >
               {(row.prerequisites || []).length > 0 ? (
@@ -293,43 +279,27 @@ function CoursesPage({ showAlert }) {
                 <span> - </span>
               )}
             </TableCell>
+
             <TableCell
               align="center"
-              style={{ backgroundColor: getRowBackgroundColor(row.status) }}
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
             >
-              {mode === "view" ? (
-                <Tooltip title={"Ver más"}>
-                  <IconButton
-                    onClick={() => handleNavigate(row.code)}
-                    sx={{ padding: 0 }}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                </Tooltip>
-              ) : (
-                <Tooltip
-                  title={
-                    row.status === "pending"
-                      ? "Pendiente"
-                      : row.status === "in_progress"
-                      ? "Cursando"
-                      : "Aprobada"
-                  }
+              <Tooltip title={"Ver más"}>
+                <IconButton
+                  onClick={() => handleNavigate(row.code)}
+                  sx={{ padding: 0, marginRight: 1 }}
                 >
-                  <IconButton
-                    onClick={() => toggleStatus(row.code)}
-                    sx={{ padding: 0 }}
-                  >
-                    {row.status === "pending" ? (
-                      <CloseIcon />
-                    ) : row.status === "in_progress" ? (
-                      <AlarmIcon />
-                    ) : (
-                      <DoneIcon />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              )}
+                  <VisibilityIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={"Eliminar"}>
+                <IconButton
+                  onClick={() => handleNavigate(row.code)}
+                  sx={{ padding: 0, marginLeft: 1 }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
             </TableCell>
           </>
         );
@@ -348,12 +318,9 @@ function CoursesPage({ showAlert }) {
   const handleCloseDialog = () => {
     setDialogAdd(false);
     resetFields();
-    setEditingProffessorIndex(null);
-    setEditingScheduleIndex(null);
   };
 
   // guardar datos ingresados en variables
-  // pagina 1
   const [code, setCode] = React.useState("");
   const handleChangeCode = (event) => {
     setCode(event.target.value);
@@ -362,18 +329,12 @@ function CoursesPage({ showAlert }) {
   const handleChangeName = (event) => {
     setName(event.target.value);
   };
-  const [status, setStatus] = React.useState("pending");
-  const handleChangeStatus = (event) => {
-    setStatus(event.target.value);
-  };
   const [workload, setWorkload] = React.useState("");
   const handleChangeWorkload = (event) => {
     setWorkload(event.target.value);
   };
   const [prerequisites, setPrerequisites] = React.useState([]);
   const handleChangePrerequisites = (event, value) => {
-    console.log("value: ", value);
-
     // guardar solo las IDs de las materias seleccionadas
     const updatedPrerequisites = value.map((course) => course._id);
     setPrerequisites(updatedPrerequisites);
@@ -390,30 +351,9 @@ function CoursesPage({ showAlert }) {
   const handleChangeSemester = (event, newSemester) => {
     setSemester(newSemester);
   };
-  // pagina 2
-  const [commission, setCommission] = React.useState("");
-  const handleChangeCommission = (event) => {
-    setCommission(event.target.value);
-  };
-  const [building, setBuilding] = React.useState("");
-  const handleChangeBuilding = (event) => {
-    setBuilding(event.target.value);
-  };
-  const [classroom, setClassroom] = React.useState("");
-  const handleChangeClassroom = (event) => {
-    setClassroom(event.target.value);
-  };
-  const [grade, setGrade] = React.useState("");
-  const handleChangeGrade = (event) => {
-    setGrade(event.target.value);
-  };
   const [modality, setModality] = React.useState("presential");
   const handleChangeModality = (event, newValue) => {
     setModality(newValue);
-  };
-  const [observations, setObservations] = React.useState("");
-  const handleChangeObservations = (event, newValue) => {
-    setObservations(newValue);
   };
 
   // crear color aleatorio para la materia
@@ -449,19 +389,11 @@ function CoursesPage({ showAlert }) {
       code,
       name,
       workload,
-      status,
       prerequisites,
       year,
       semester,
       type,
-      commission,
-      building,
-      classroom,
-      grade,
       modality,
-      observations,
-      professors,
-      schedules,
       user: user.id,
       color: getRandomColor(),
     };
@@ -481,7 +413,6 @@ function CoursesPage({ showAlert }) {
       resetFields();
       handleCloseDialog();
       setErrors({});
-      setPage(1);
       fetchCourses();
     } catch (error) {
       console.error("error: ", error.response?.data?.message || error.message);
@@ -494,138 +425,15 @@ function CoursesPage({ showAlert }) {
     setCode("");
     setName("");
     setWorkload("");
-    setStatus("pending");
     setPrerequisites([]);
     setYear(1);
     setSemester(1);
     setType("mandatory");
-    setCommission("");
-    setBuilding("");
-    setClassroom("");
-    setGrade("");
     setModality("presential");
-    setObservations("");
-    setProfessors([]);
-    setSchedules([]);
-  };
-
-  // paginado del dialog
-  const [page, setPage] = React.useState(1);
-  const handleNext = () => {
-    const newErrors = {};
-
-    // verificar cada campo, y crear un error si esta vacio
-    if (!code) newErrors.code = "El código es obligatorio.";
-    if (!name) newErrors.name = "El nombre es obligatorio.";
-    if (!workload) newErrors.workload = "La carga horaria es obligatoria.";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors); // establecer errores en "errors"
-      showAlert("Falta Completar Datos", "error");
-      return; // salir si hay errores
-    }
-
-    // si no hay errores, limpia el estado de errores y avanza
-    setErrors({});
-    setPage(2);
-  };
-  const handleBack = () => {
-    setPage(1); // retrocede a pagina 1
   };
 
   // manejo de errores
   const [errors, setErrors] = React.useState({});
-
-  // profesores
-  const [professors, setProfessors] = React.useState([
-    {
-      name: "Martin Palermo",
-      email: "mp9@example.com",
-      observations: "el titan",
-    },
-    {
-      name: "Juan Roman Riquelme",
-      email: "jrr10@example.com",
-      observations: "el ultimo 10",
-    },
-  ]);
-  // que profesor estoy editando
-  const [editingProffessorIndex, setEditingProffessorIndex] =
-    React.useState(null);
-  // agregar profesor
-  const addProfessor = () => {
-    const newProfessor = {
-      name: "",
-      email: "",
-    };
-    setProfessors([...professors, newProfessor]);
-    setEditingProffessorIndex(professors.length); // ponemos profesor nuevo en modo edicion
-  };
-  // editar profesor
-  const updateProfessorField = (index, field, value) => {
-    const updatedProfessors = [...professors];
-    updatedProfessors[index][field] = value;
-    setProfessors(updatedProfessors);
-  };
-  // guardar  profesor
-  const saveProfessor = (index) => {
-    setEditingProffessorIndex(null);
-  };
-  // eliminar profesor
-  const deleteProfessor = (index) => {
-    const updatedProfessors = professors.filter((_, i) => i !== index);
-    setProfessors(updatedProfessors);
-  };
-
-  // horarios
-  const [schedules, setSchedules] = React.useState([
-    {
-      startTime: "14:00",
-      endTime: "17:00",
-      day: "monday",
-      modality: "presential",
-    },
-  ]);
-  // que horario estoy editando
-  const [editingScheduleIndex, setEditingScheduleIndex] = React.useState(null);
-  // agregar horario
-  const addSchedule = () => {
-    const newSchedule = {
-      startTime: "",
-      endTime: "",
-      day: "",
-      modality: "presential",
-    };
-    setSchedules([...schedules, newSchedule]);
-    setEditingScheduleIndex(schedules.length); // nuevo horario en modo edición
-  };
-  // editar horario
-  const updateScheduleField = (index, field, value) => {
-    const updatedSchedules = [...schedules];
-    updatedSchedules[index][field] = value;
-    setSchedules(updatedSchedules);
-  };
-  // guardar horario
-  const saveSchedule = (index) => {
-    setEditingScheduleIndex(null); // salir de modo edición
-  };
-  // eliminar horario
-  const deleteSchedule = (index) => {
-    const updatedSchedules = schedules.filter((_, i) => i !== index);
-    setSchedules(updatedSchedules);
-  };
-  // dias
-  const days = [
-    { english: "monday", spanish: "Lunes" },
-    { english: "tuesday", spanish: "Martes" },
-    { english: "wednesday", spanish: "Miércoles" },
-    { english: "thursday", spanish: "Jueves" },
-    { english: "friday", spanish: "Viernes" },
-    { english: "saturday", spanish: "Sábado" },
-  ];
-
-  // traer materias del contexto
-  const { courses, setCourses, user } = useAuth(); // extraer materias del contexto
 
   // crear las filas (materias y separadores)
   const generateRows = (courses) => {
@@ -750,6 +558,12 @@ function CoursesPage({ showAlert }) {
     setRows(generateRows(courses));
   }, [courses]);
 
+  /*
+  if (loading || periods) {
+    return <LoadingX />;
+  }
+    */
+
   return (
     <div>
       <Box
@@ -760,16 +574,9 @@ function CoursesPage({ showAlert }) {
       >
         <h1 style={{ margin: 0 }}>Materias</h1>
         <Box display="flex" alignItems="center">
-          {mode !== "view" && (
-            <Tooltip title="Agregar Materia">
-              <IconButton onClick={handleOpenDialog} sx={{ marginRight: 1.5 }}>
-                <AddIcon />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Tooltip title={mode === "view" ? "Editar" : "Visualizar"}>
-            <IconButton onClick={toggleMode}>
-              {mode === "view" ? <EditIcon /> : <VisibilityIcon />}
+          <Tooltip title="Agregar Materia">
+            <IconButton onClick={handleOpenDialog} sx={{ marginRight: 1.5 }}>
+              <AddIcon />
             </IconButton>
           </Tooltip>
         </Box>
@@ -793,7 +600,7 @@ function CoursesPage({ showAlert }) {
               ))}
             </TableRow>
           )}
-          itemContent={(index, row) => rowContent(index, row, mode)}
+          itemContent={(index, row) => rowContent(index, row)}
         />
       </StyledPaper>
       {/* dialog de agregar materia*/}
@@ -897,6 +704,7 @@ function CoursesPage({ showAlert }) {
                 )}
               />
             </Grid>
+
             {/* fila 4: año - cuatrimestre - tipo */}
             <Grid container size={12}>
               <Grid size={{ xs: 12, sm: 12, md: 8, lg: 5 }}>

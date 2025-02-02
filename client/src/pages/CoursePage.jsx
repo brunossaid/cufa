@@ -106,8 +106,6 @@ function CoursePage({ showAlert }) {
     setSchedules(selectedCourse.schedules || []);
   };
 
-  // ================================================================================================
-
   // filtrar los periodos en los que se curso la materia ✅
   React.useEffect(() => {
     if (course && periods?.length > 0) {
@@ -138,8 +136,6 @@ function CoursePage({ showAlert }) {
       resetPeriodFields();
     }
   }, [course, selectedPeriod]);
-
-  // ================================================================================================
 
   // resetear las notas cuando el status cambia
   React.useEffect(() => {
@@ -222,6 +218,7 @@ function CoursePage({ showAlert }) {
     try {
       updateCourseRequest(course._id, filteredCourse);
       showAlert("Materia Editada", "info", <DoneIcon />);
+      console.log("course editado");
     } catch (error) {
       console.error("error: ", error);
       showAlert("Error", "error");
@@ -289,6 +286,7 @@ function CoursePage({ showAlert }) {
     try {
       await updatePeriodRequest(selectedPeriod._id, updatedPeriod);
       showAlert("Materia Editada", "info", <DoneIcon />);
+      console.log("course (period) editado");
     } catch (error) {
       console.error("error: ", error);
       showAlert("Error", "error");
@@ -453,11 +451,13 @@ function CoursePage({ showAlert }) {
   // switchear entre periodos
   const handlePreviousPeriod = () => {
     setSelectedPeriodIndex((prev) => Math.max(prev - 1, 0));
+    setEditPeriodMode(false);
   };
   const handleNextPeriod = () => {
     setSelectedPeriodIndex((prev) =>
       Math.min(prev + 1, coursePeriods.length - 1)
     );
+    setEditPeriodMode(false);
   };
 
   // dias y años

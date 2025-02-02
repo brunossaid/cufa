@@ -93,7 +93,6 @@ function HistoryPage() {
 
   // crear periodo
   const savePeriod = async () => {
-    console.log(periodCourses);
     const period = {
       year: year,
       semester: semester,
@@ -153,6 +152,9 @@ function HistoryPage() {
                 )}
                 isOptionEqualToValue={(option, value) => option === value}
                 getOptionLabel={(option) => option.toString()}
+                onChange={(event, newValue) => {
+                  setYear(newValue);
+                }}
               />
             </Grid>
 

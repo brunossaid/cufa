@@ -6,72 +6,65 @@ import { Box, LinearProgress, Stack, Tooltip, Typography } from "@mui/material";
 import HubIcon from "@mui/icons-material/Hub";
 
 const HomePage = () => {
-  const { user, courses, plans, loading } = useAuth(); // extraer usuario del contexto
+  // extraer datos del contexto
+  const { user, courses, periods, loading } = useAuth();
+
+  // buscar entre los periods el status
+  const getStatus = (courseId) => {
+    for (let i = periods.length - 1; i >= 0; i--) {
+      const period = periods[i];
+      const course = period.courses.find((c) => c.courseId === courseId);
+
+      if (course) {
+        if (course.courseId === "679eba2451b17bc19946f800") {
+        }
+        return course.status;
+      }
+    }
+
+    return "pending"; // default
+  };
 
   // cuentas para los graficos
   // total
   const approvedCount = courses.filter(
-    (course) => course.status === "approved"
+    (course) =>
+      getStatus(course._id) === "approved" ||
+      getStatus(course._id) === "promoted"
   ).length;
   const totalCourses = courses.length;
   const pendingCount = totalCourses - approvedCount;
 
-  // 1 año
-  const approvedPercentage1 =
-    Math.round(
-      (courses.filter(
-        (course) => course.year == 1 && course.status == "approved"
-      ).length /
-        courses.filter((course) => course.year == 1).length) *
-        100
-    ) || 0;
+  // calcular porcentaje
+  const calculateApprovedPercentage = (year) => {
+    const total = courses.filter((course) => course.year == year).length;
+    if (total === 0) return 0;
 
-  // 2 año
-  const approvedPercentage2 =
-    Math.round(
-      (courses.filter(
-        (course) => course.year == 2 && course.status == "approved"
-      ).length /
-        courses.filter((course) => course.year == 2).length) *
-        100
-    ) || 0;
+    const approved = courses.filter(
+      (course) =>
+        course.year == year &&
+        (getStatus(course._id) === "approved" ||
+          getStatus(course._id) === "promoted")
+    ).length;
 
-  // 3 año
-  const approvedPercentage3 =
-    Math.round(
-      (courses.filter(
-        (course) => course.year == 3 && course.status == "approved"
-      ).length /
-        courses.filter((course) => course.year == 3).length) *
-        100
-    ) || 0;
+    return Math.round((approved / total) * 100);
+  };
 
-  // 4 año
-  const approvedPercentage4 =
-    Math.round(
-      (courses.filter(
-        (course) => course.year == 4 && course.status == "approved"
-      ).length /
-        courses.filter((course) => course.year == 4).length) *
-        100
-    ) || 0;
-
-  // 5 año
-  const approvedPercentage5 =
-    Math.round(
-      (courses.filter(
-        (course) => course.year == 5 && course.status == "approved"
-      ).length /
-        courses.filter((course) => course.year == 5).length) *
-        100
-    ) || 0;
+  // calcular porcentaje de cada año
+  const approvedPercentage1 = calculateApprovedPercentage(1);
+  const approvedPercentage2 = calculateApprovedPercentage(2);
+  const approvedPercentage3 = calculateApprovedPercentage(3);
+  const approvedPercentage4 = calculateApprovedPercentage(4);
+  const approvedPercentage5 = calculateApprovedPercentage(5);
 
   // titulo intermedio
   const approvedPercentage123 =
     Math.round(
       (courses.filter(
         (course) =>
-          [1, 2, 3].includes(course.year) && course.status == "approved"
+          ([1, 2, 3].includes(course.year) &&
+            getStatus(course._id) == "approved") ||
+          getStatus(course._id) === "promoted"
       ).length /
         courses.filter((course) => [1, 2, 3].includes(course.year)).length) *
         100
@@ -154,7 +147,9 @@ const HomePage = () => {
                       title={`${
                         courses.filter(
                           (course) =>
-                            course.year == 1 && course.status == "approved"
+                            course.year == 1 &&
+                            (getStatus(course._id) === "approved" ||
+                              getStatus(course._id) === "promoted")
                         ).length
                       }/${
                         courses.filter((course) => course.year == 1).length
@@ -229,7 +224,9 @@ const HomePage = () => {
                       title={`${
                         courses.filter(
                           (course) =>
-                            course.year == 3 && course.status == "approved"
+                            course.year == 3 &&
+                            (getStatus(course._id) === "approved" ||
+                              getStatus(course._id) === "promoted")
                         ).length
                       }/${
                         courses.filter((course) => course.year == 3).length
@@ -266,7 +263,9 @@ const HomePage = () => {
                       title={`${
                         courses.filter(
                           (course) =>
-                            course.year == 4 && course.status == "approved"
+                            course.year == 4 &&
+                            (getStatus(course._id) === "approved" ||
+                              getStatus(course._id) === "promoted")
                         ).length
                       }/${
                         courses.filter((course) => course.year == 4).length
@@ -303,7 +302,9 @@ const HomePage = () => {
                       title={`${
                         courses.filter(
                           (course) =>
-                            course.year == 5 && course.status == "approved"
+                            course.year == 5 &&
+                            (getStatus(course._id) === "approved" ||
+                              getStatus(course._id) === "promoted")
                         ).length
                       }/${
                         courses.filter((course) => course.year == 5).length
@@ -345,7 +346,8 @@ const HomePage = () => {
                       courses.filter(
                         (course) =>
                           [1, 2, 3].includes(course.year) &&
-                          course.status == "approved"
+                          (getStatus(course._id) === "approved" ||
+                            getStatus(course._id) === "promoted")
                       ).length
                     }/${
                       courses.filter((course) =>
