@@ -16,8 +16,6 @@ const HomePage = () => {
       const course = period.courses.find((c) => c.courseId === courseId);
 
       if (course) {
-        if (course.courseId === "679eba2451b17bc19946f800") {
-        }
         return course.status;
       }
     }

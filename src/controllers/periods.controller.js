@@ -15,7 +15,20 @@ export const getPeriods = async (req, res) => {
 // crear período
 export const createPeriod = async (req, res) => {
   try {
-    const { year, semester, user, courses } = req.body;
+    const { year, semester, courses } = req.body;
+
+    // Check if a period with the same year, semester, and user already exists
+    const existingPeriod = await Period.findOne({
+      user: req.user.id,
+      year,
+      semester,
+    });
+
+    if (existingPeriod) {
+      return res
+        .status(400)
+        .json({ message: "A period for this semester already exists." });
+    }
 
     const newPeriod = new Period({
       year,
@@ -27,6 +40,11 @@ export const createPeriod = async (req, res) => {
     await newPeriod.save();
     res.status(201).json(newPeriod);
   } catch (error) {
+    if (error.code === 11000) {
+      return res
+        .status(400)
+        .json({ message: "A period for this semester already exists." });
+    }
     return res.status(500).json({ message: error.message });
   }
 };
@@ -72,6 +90,27 @@ export const getPeriod = async (req, res) => {
       return res.status(404).json({ message: "Period not found" });
     }
     return res.json(periodData);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// eliminar course del period
+export const deleteCourseFromPeriod = async (req, res) => {
+  try {
+    const { periodId, courseId } = req.params;
+
+    const updatedPeriod = await Period.findByIdAndUpdate(
+      periodId,
+      { $pull: { courses: { courseId } } },
+      { new: true }
+    );
+
+    if (!updatedPeriod) {
+      return res.status(404).json({ message: "Period not found" });
+    }
+
+    return res.json(updatedPeriod);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

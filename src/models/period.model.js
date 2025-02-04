@@ -37,7 +37,7 @@ const scheduleSchema = new mongoose.Schema({
   },
 });
 
-// esquema de períodos (PERIODS)
+// esquema de cursadas (PERIODS)
 const periodSchema = new mongoose.Schema(
   {
     year: {
@@ -99,5 +99,8 @@ const periodSchema = new mongoose.Schema(
   },
   { timestamps: true } // createdAt - updatedAt
 );
+
+// indice para que solo haya una cursada año-cuatrimestre
+periodSchema.index({ user: 1, year: 1, semester: 1 }, { unique: true });
 
 export default mongoose.model("period", periodSchema);

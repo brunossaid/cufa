@@ -28,14 +28,22 @@ import EditIcon from "@mui/icons-material/EditRounded";
 import AddIcon from "@mui/icons-material/AddRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
 import CloseIcon from "@mui/icons-material/CloseRounded";
+import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import DeleteIcon from "@mui/icons-material/DeleteRounded";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedInRounded";
 import AssignmentLateIcon from "@mui/icons-material/AssignmentLateRounded";
 import AlarmIcon from "@mui/icons-material/AlarmRounded";
 import { createPeriodRequest } from "../api/periods";
+import Slide from "@mui/material/Slide";
+import Semester from "../components/Semester";
 
-function HistoryPage() {
-  const { courses, periods, user, loading } = useAuth();
+// transicion del dialog
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+function HistoryPage({ showAlert }) {
+  const { courses, periods, setPeriods, user, loading } = useAuth();
 
   // useStates
   const [year, setYear] = React.useState(new Date().getFullYear());
@@ -91,7 +99,7 @@ function HistoryPage() {
     );
   };
 
-  // crear periodo
+  // crear period
   const savePeriod = async () => {
     const period = {
       year: year,
@@ -103,9 +111,18 @@ function HistoryPage() {
     try {
       const response = await createPeriodRequest(period);
       console.log("nuevo periodo creado:", response.data);
+      setPeriods((prevPeriods) => [...prevPeriods, response.data]);
       handleCloseDialog();
+      showAlert("Cursada Creada", "success");
     } catch (error) {
-      console.error("error al crear el period:", error);
+      console.error("error al crear el period:", error.response.data.message);
+      showAlert(
+        error.response.data.message ===
+          "A period for this semester already exists."
+          ? "Cuatrimestre ya existente"
+          : "Error",
+        "error"
+      );
     }
   };
 
@@ -126,15 +143,56 @@ function HistoryPage() {
 
   return (
     <div>
-      <h1>Historial</h1>
-      <Button variant="outlined" onClick={handleOpenDialog}>
-        crear cursada
-      </Button>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        marginBottom={2.5}
+      >
+        <h1>Historial</h1>
+
+        <Button
+          variant={"text"}
+          onClick={handleOpenDialog}
+          color="white"
+          endIcon={<AddCircleIcon />}
+          style={{
+            transition: "transform 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "scale(1)";
+          }}
+        >
+          Crear Cursada
+        </Button>
+      </Box>
+
+      {Object.values(
+        periods.reduce((acc, period) => {
+          acc[period.year] = acc[period.year] || [];
+          acc[period.year].push(period);
+          return acc;
+        }, {})
+      ).map((yearPeriods, index) => (
+        <Grid container size={12} spacing={2} key={index}>
+          {yearPeriods.map((period) => (
+            <Grid size={{ xs: 12, xl: 6 }} key={period._id}>
+              <Semester
+                {...{ period, periods, setPeriods, courses, showAlert }}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ))}
 
       {/* dialog de agregar materia*/}
       <Dialog
         open={dialogAdd}
         onClose={handleCloseDialog}
+        TransitionComponent={Transition}
         sx={{
           "& .MuiDialog-paper": { width: "50%", maxWidth: "none" },
         }}

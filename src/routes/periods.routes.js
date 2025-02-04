@@ -6,6 +6,7 @@ import {
   createPeriod,
   updatePeriod,
   deletePeriod,
+  deleteCourseFromPeriod,
 } from "../controllers/periods.controller.js";
 import { validateSchema } from "../middlewares/validator.middleware.js";
 import { createPeriodSchema } from "../schemas/period.schema.js";
@@ -22,5 +23,10 @@ router.post(
 );
 router.put("/periods/:id", authRequired, updatePeriod);
 router.delete("/periods/:id", authRequired, deletePeriod);
+router.delete(
+  "/periods/:periodId/courses/:courseId",
+  authRequired,
+  deleteCourseFromPeriod
+);
 
 export default router;

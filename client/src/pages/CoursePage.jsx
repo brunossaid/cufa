@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   Autocomplete,
@@ -44,6 +44,10 @@ function CoursePage({ showAlert }) {
   const { courses, periods, loading } = useAuth();
   const { code } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // si existe, obtener periodId
+  const { periodId } = location.state || {};
 
   // definir curso
   const course = courses?.find((course) => course.code === code) || null;
@@ -74,7 +78,7 @@ function CoursePage({ showAlert }) {
   // useStates de errores - periodos en los q se curso - indice - editCourseMode - editPeriodMode
   const [errors, setErrors] = React.useState({});
   const [coursePeriods, setCoursePeriods] = React.useState([]);
-  const [selectedPeriodIndex, setSelectedPeriodIndex] = React.useState(0);
+  const [selectedPeriodIndex, setSelectedPeriodIndex] = React.useState(null);
   const [editCourseMode, setEditCourseMode] = React.useState(false);
   const [editPeriodMode, setEditPeriodMode] = React.useState(false);
 
@@ -113,6 +117,20 @@ function CoursePage({ showAlert }) {
         period.courses.some((c) => c.courseId === course._id)
       );
       setCoursePeriods(filteredPeriods);
+
+      // asignar el period que se va a mostrar
+      if (periodId) {
+        // si periodId existe
+        const index = filteredPeriods.findIndex(
+          (period) => period._id === periodId
+        );
+        setSelectedPeriodIndex(index !== -1 ? index : null);
+      } else {
+        // si periodId no existe
+        setSelectedPeriodIndex(
+          filteredPeriods.length > 0 ? filteredPeriods.length - 1 : null
+        );
+      }
     }
   }, [course, periods]);
 

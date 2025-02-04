@@ -30,5 +30,11 @@ export const updateCourseRequest = (courseId, course) => {
   });
 };
 
-export const deleteCourseRequest = (courseId) =>
-  axios.delete(`${API}/courses/${courseId}`);
+export const deleteCourseRequest = (courseId) => {
+  const token = Cookies.get("token") || localStorage.getItem("authToken");
+  return axios.delete(`${API}/courses/${courseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`, // enviar token
+    },
+  });
+};

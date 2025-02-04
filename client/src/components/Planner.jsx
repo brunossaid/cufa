@@ -32,10 +32,24 @@ const dayTranslations = {
 };
 const hours = Array.from({ length: 15 }, (_, i) => 8 + i);
 
-export default function Planner({ courses, plan }) {
+export default function Planner({ courses, plan, periods }) {
   const [schedule, setSchedule] = useState({});
   const [selectedCourse, setSelectedCourse] = useState(null); // curso seleccionado
   const [activeCourses, setActiveCourses] = useState([]); // cursos en el menu
+
+  // buscar entre los periods el status
+  const getStatus = (courseId) => {
+    for (let i = periods.length - 1; i >= 0; i--) {
+      const period = periods[i];
+      const course = period.courses.find((c) => c.courseId === courseId);
+
+      if (course) {
+        return course.status;
+      }
+    }
+
+    return "pending"; // default
+  };
 
   const handleCellClick = async (day, hour) => {
     if (!selectedCourse) return; // si no hay curso seleccionado, no hacer nada
@@ -356,7 +370,10 @@ export default function Planner({ courses, plan }) {
             (course) =>
               !activeCourses.some(
                 (activeCourse) => activeCourse.name === course.name
-              ) && course.status === "pending"
+              ) &&
+              !["approved", "promoted", "in_progress"].includes(
+                getStatus(course._id)
+              )
           )
           .map((course) => (
             <MenuItem key={course.name} onClick={() => handleAddCourse(course)}>

@@ -14,19 +14,14 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   FormControl,
   FormHelperText,
   IconButton,
   InputLabel,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
   MenuItem,
   Select,
-  Slider,
-  stepClasses,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -34,27 +29,21 @@ import {
   Typography,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/VisibilityRounded";
-import EditIcon from "@mui/icons-material/EditRounded";
-import AddIcon from "@mui/icons-material/AddRounded";
+import DeleteIcon from "@mui/icons-material/DeleteRounded";
+import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
-import AlarmIcon from "@mui/icons-material/AlarmRounded";
-import CloseIcon from "@mui/icons-material/CloseRounded";
 import styled from "styled-components";
 import Grid from "@mui/material/Grid2";
 import OneIcon from "@mui/icons-material/LooksOneRounded";
 import TwoIcon from "@mui/icons-material/LooksTwoRounded";
-import DeleteIcon from "@mui/icons-material/DeleteRounded";
-import PersonIcon from "@mui/icons-material/PersonRounded";
-import ClockIcon from "@mui/icons-material/QueryBuilderRounded";
-import HeadsetIcon from "@mui/icons-material/HeadsetMicRounded";
-import GroupsIcon from "@mui/icons-material/GroupsRounded";
 import { useAuth } from "../context/AuthContext";
 import {
   createCourseRequest,
   getCoursesRequest,
-  updateCourseRequest,
+  deleteCourseRequest,
 } from "../api/courses";
 import { useNavigate } from "react-router-dom";
+import Slide from "@mui/material/Slide";
 import LoadingX from "../components/LoadingX";
 
 // datos de las columnas
@@ -125,6 +114,11 @@ const StyledPaper = styled(Paper)`
   }
 `;
 
+// transicion del dialog
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 function CoursesPage({ showAlert }) {
   // traer datos del contexto
   const { courses, setCourses, periods, user, loading } = useAuth();
@@ -136,8 +130,6 @@ function CoursesPage({ showAlert }) {
       const course = period.courses.find((c) => c.courseId === courseId);
 
       if (course) {
-        if (course.courseId === "679eba2451b17bc19946f800") {
-        }
         return course.status;
       }
     }
@@ -294,7 +286,7 @@ function CoursesPage({ showAlert }) {
               </Tooltip>
               <Tooltip title={"Eliminar"}>
                 <IconButton
-                  onClick={() => handleNavigate(row.code)}
+                  onClick={() => handleOpenDialogDelete(row._id)}
                   sx={{ padding: 0, marginLeft: 1 }}
                 >
                   <DeleteIcon />
@@ -311,12 +303,27 @@ function CoursesPage({ showAlert }) {
   // dialog de agregar materia
   const [dialogAdd, setDialogAdd] = React.useState(false);
   // abrir
-  const handleOpenDialog = () => {
+  const handleOpenDialogAdd = () => {
     setDialogAdd(true);
   };
   // cerrar
-  const handleCloseDialog = () => {
+  const handleCloseDialogAdd = () => {
     setDialogAdd(false);
+    resetFields();
+  };
+
+  // dialog de eliminar materia
+  const [dialogDelete, setDialogDelete] = React.useState(false);
+  const [courseToDelete, setCourseToDelete] = React.useState(null);
+  // abrir
+  const handleOpenDialogDelete = (courseId) => {
+    setCourseToDelete(courseId);
+    setDialogDelete(true);
+  };
+  // cerrar
+  const handleCloseDialogDelete = () => {
+    setDialogDelete(false);
+    setCourseToDelete(null);
     resetFields();
   };
 
@@ -363,7 +370,7 @@ function CoursesPage({ showAlert }) {
       .padStart(6, "0")}`;
   };
 
-  // guardar datos
+  // guardar course
   const handleSave = async () => {
     const newErrors = {};
 
@@ -403,20 +410,41 @@ function CoursesPage({ showAlert }) {
       Object.entries(newCourse).filter(([_, value]) => value !== "")
     );
 
-    console.log("filteredCourse: ", filteredCourse);
-
     try {
       await createCourseRequest(filteredCourse);
 
       // si no hubo errores, continuar con la lógica
       showAlert("Materia Creada", "success", <DoneIcon />);
       resetFields();
-      handleCloseDialog();
+      handleCloseDialogAdd();
       setErrors({});
       fetchCourses();
     } catch (error) {
       console.error("error: ", error.response?.data?.message || error.message);
       showAlert("Error", "error");
+    }
+  };
+
+  // eliminar course
+  const handleDelete = async () => {
+    if (courseToDelete) {
+      try {
+        await deleteCourseRequest(courseToDelete); // llama a la API para eliminar el plan
+        console.log("course eliminado");
+
+        setCourses((prevCourses) =>
+          prevCourses.filter((course) => course._id !== courseToDelete)
+        );
+
+        resetFields();
+        showAlert("Materia Eliminad", "error", <DeleteIcon />);
+      } catch (error) {
+        console.error(
+          "error al eliminar el course:",
+          error.response.data.message
+        );
+      }
+      handleCloseDialogDelete();
     }
   };
 
@@ -558,12 +586,6 @@ function CoursesPage({ showAlert }) {
     setRows(generateRows(courses));
   }, [courses]);
 
-  /*
-  if (loading || periods) {
-    return <LoadingX />;
-  }
-    */
-
   return (
     <div>
       <Box
@@ -573,13 +595,23 @@ function CoursesPage({ showAlert }) {
         marginBottom={2.5}
       >
         <h1 style={{ margin: 0 }}>Materias</h1>
-        <Box display="flex" alignItems="center">
-          <Tooltip title="Agregar Materia">
-            <IconButton onClick={handleOpenDialog} sx={{ marginRight: 1.5 }}>
-              <AddIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <Button
+          variant={"text"}
+          onClick={handleOpenDialogAdd}
+          color="white"
+          endIcon={<AddCircleIcon />}
+          style={{
+            transition: "transform 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "scale(1)";
+          }}
+        >
+          Agregar Materia
+        </Button>
       </Box>
       <StyledPaper>
         <TableVirtuoso
@@ -606,7 +638,8 @@ function CoursesPage({ showAlert }) {
       {/* dialog de agregar materia*/}
       <Dialog
         open={dialogAdd}
-        onClose={handleCloseDialog}
+        onClose={handleCloseDialogAdd}
+        TransitionComponent={Transition}
         sx={{
           "& .MuiDialog-paper": { width: "50%", maxWidth: "none" },
         }}
@@ -759,7 +792,11 @@ function CoursesPage({ showAlert }) {
             marginY: 1,
           }}
         >
-          <Button onClick={handleCloseDialog} variant="contained" color="error">
+          <Button
+            onClick={handleCloseDialogAdd}
+            variant="contained"
+            color="error"
+          >
             Cancelar
           </Button>
 
@@ -769,6 +806,34 @@ function CoursesPage({ showAlert }) {
             onClick={handleSave} // guarda los cambios
           >
             Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* dialog de eliminar materia*/}
+      <Dialog
+        open={dialogDelete}
+        onClose={handleCloseDialogDelete}
+        TransitionComponent={Transition}
+      >
+        <DialogTitle>
+          {"¿Seguro que quieres eliminar esta materia?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Se eliminaran todas sus referencias
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDialogDelete}
+            color="error"
+            variant="contained"
+          >
+            Cancelar
+          </Button>
+          <Button onClick={handleDelete} color="success" variant="contained">
+            Aceptar
           </Button>
         </DialogActions>
       </Dialog>

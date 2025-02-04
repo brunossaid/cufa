@@ -32,7 +32,7 @@ import { deletePlanRequest } from "../api/plans";
 import { updatePlanRequest } from "../api/plans";
 
 function PlannerPage({ showAlert }) {
-  const { user, courses, plans, setPlans } = useAuth();
+  const { user, courses, plans, setPlans, periods } = useAuth();
 
   // agregar plan
   const handleAddPlan = async () => {
@@ -154,7 +154,7 @@ function PlannerPage({ showAlert }) {
               alignItems="center"
             >
               <TextField
-                label="plan"
+                label="Plan"
                 variant="outlined"
                 size="small"
                 autoComplete="off"
@@ -184,7 +184,7 @@ function PlannerPage({ showAlert }) {
                 </IconButton>
               </Tooltip>
             </Box>
-            <Planner plan={plan} courses={coursesFB} />
+            <Planner plan={plan} courses={coursesFB} periods={periods} />
           </div>
         ))
       )}

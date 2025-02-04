@@ -16,17 +16,6 @@ import StatisticsPage from "./pages/StatisticsPage";
 import { useState } from "react";
 import CoursePage from "./pages/CoursePage";
 
-/*
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: {
-      main: "#0fc5f7",
-    },
-  },
-});
-*/
-
 function AppContent() {
   const { isAuthenticated, user } = useAuth();
 
@@ -114,7 +103,10 @@ function AppContent() {
                 path="/planner"
                 element={<PlannerPage showAlert={showAlert} />}
               />
-              <Route path="/history" element={<HistoryPage />} />
+              <Route
+                path="/history"
+                element={<HistoryPage showAlert={showAlert} />}
+              />
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/profile" element={<h1>User Profile</h1>} />
               <Route path="*" element={<Navigate to="/home" />} />
