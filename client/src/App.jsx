@@ -15,6 +15,7 @@ import HistoryPage from "./pages/HistoryPage";
 import StatisticsPage from "./pages/StatisticsPage";
 import { useState } from "react";
 import CoursePage from "./pages/CoursePage";
+import UserPage from "./pages/UserPage";
 
 function AppContent() {
   const { isAuthenticated, user } = useAuth();
@@ -59,75 +60,99 @@ function AppContent() {
       mode: colorMode,
       primary: { main: colorMode === "light" ? "#171717" : "#0fc5f7" },
       background: {
-        default: colorMode === "light" ? "#FFFFFF" : "#000000",
-        paper: colorMode === "dark" ? "#000000" : "#FFFFFF",
+        default: colorMode === "light" ? "#e8e8e8" : "#000000",
+        paper: colorMode === "light" ? "#d6d6d6" : "#000000",
       },
     },
   });
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AlertX
-        {...{
-          messageInfo,
-          setMessageInfo,
-          snackPack,
-          setSnackPack,
-          open,
-          setOpen,
-        }}
-      />
-      {isAuthenticated === true ? (
-        // si el usuario esta autenticado, se muestran las rutas protegidas
-        <>
-          <DrawerX {...{ showAlert, changeColorMode, colorMode }} />
-          <Box
-            sx={{
-              marginLeft: "300px",
-              marginRight: "60px",
-              marginTop: "100px",
-            }}
-          >
-            <Routes>
-              <Route path="/home" element={<HomePage />} />
-              <Route
-                path="/courses"
-                element={<CoursesPage showAlert={showAlert} />}
-              />
-              <Route
-                path="/courses/:code"
-                element={<CoursePage showAlert={showAlert} />}
-              />
-              <Route
-                path="/planner"
-                element={<PlannerPage showAlert={showAlert} />}
-              />
-              <Route
-                path="/history"
-                element={<HistoryPage showAlert={showAlert} />}
-              />
-              <Route path="/statistics" element={<StatisticsPage />} />
-              <Route path="/profile" element={<h1>User Profile</h1>} />
-              <Route path="*" element={<Navigate to="/home" />} />
-            </Routes>
-          </Box>
-        </>
-      ) : isAuthenticated === false ? (
-        // si el usuario NO esta autenticado, se muestran las rutas publicas (login y register)
-        <Routes>
-          <Route
-            path="/login"
-            element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />}
-          />
-          <Route
-            path="/register"
-            element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />}
-          />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      ) : null}
-    </ThemeProvider>
+    <Box
+      sx={{
+        // scrollbar
+        overflowY: "auto",
+        maxHeight: "100vh",
+        "&::-webkit-scrollbar": {
+          width: "10px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: colorMode === "light" ? "#f1f1f1" : "#222",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: colorMode === "light" ? "#aaa" : "#36393b",
+          borderRadius: "10px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          background: colorMode === "light" ? "#888" : "#545a5c",
+        },
+      }}
+    >
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AlertX
+          {...{
+            messageInfo,
+            setMessageInfo,
+            snackPack,
+            setSnackPack,
+            open,
+            setOpen,
+          }}
+        />
+        {isAuthenticated === true ? (
+          // si el usuario esta autenticado, se muestran las rutas protegidas
+          <>
+            <DrawerX {...{ showAlert, changeColorMode, colorMode }} />
+            <Box
+              sx={{
+                marginLeft: "300px",
+                marginRight: "60px",
+                marginTop: "100px",
+              }}
+            >
+              <Routes>
+                <Route path="/home" element={<HomePage />} />
+                <Route
+                  path="/courses"
+                  element={<CoursesPage showAlert={showAlert} />}
+                />
+                <Route
+                  path="/courses/:code"
+                  element={<CoursePage showAlert={showAlert} />}
+                />
+                <Route
+                  path="/planner"
+                  element={<PlannerPage showAlert={showAlert} />}
+                />
+                <Route
+                  path="/history"
+                  element={<HistoryPage showAlert={showAlert} />}
+                />
+                <Route path="/statistics" element={<StatisticsPage />} />
+                <Route
+                  path="/profile"
+                  element={<UserPage showAlert={showAlert} />}
+                />
+                <Route path="*" element={<Navigate to="/home" />} />
+              </Routes>
+            </Box>
+          </>
+        ) : isAuthenticated === false ? (
+          // si el usuario NO esta autenticado, se muestran las rutas publicas (login y register)
+          <Routes>
+            <Route
+              path="/login"
+              element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />}
+            />
+            <Route
+              path="/register"
+              element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />}
+            />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+        ) : null}
+      </ThemeProvider>
+    </Box>
   );
 }
 

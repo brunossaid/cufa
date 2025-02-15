@@ -56,7 +56,9 @@ function RegisterPage() {
         <TextField
           label="Usuario"
           variant="outlined"
-          {...register("username", { required: "Username is required" })}
+          {...register("username", {
+            required: "El nombre de usuario es obligatorio",
+          })}
           fullWidth
           error={!!errors.username}
           helperText={errors.username?.message}
@@ -66,7 +68,7 @@ function RegisterPage() {
           label="Email"
           type="email"
           variant="outlined"
-          {...register("email", { required: "Email is required" })}
+          {...register("email", { required: "El email es obligatorio" })}
           fullWidth
           error={!!errors.email}
           helperText={errors.email?.message}
@@ -77,10 +79,10 @@ function RegisterPage() {
           type="password"
           variant="outlined"
           {...register("password", {
-            required: "Password is required",
+            required: "La contraseña es obligatoria",
             minLength: {
               value: 6,
-              message: "Password must be at least 6 characters",
+              message: "La contraseña debe tener al menos 6 caracteres",
             },
           })}
           fullWidth

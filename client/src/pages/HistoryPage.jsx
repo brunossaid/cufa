@@ -43,7 +43,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 function HistoryPage({ showAlert }) {
-  const { courses, periods, setPeriods, user, loading } = useAuth();
+  const { courses, periods, setPeriods, user } = useAuth();
 
   // useStates
   const [year, setYear] = React.useState(new Date().getFullYear());
@@ -78,6 +78,7 @@ function HistoryPage({ showAlert }) {
     const newCourse = {
       courseId: null,
       status: "",
+      grade: null,
     };
     setPeriodCourses([...periodCourses, newCourse]);
     setEditingPeriodCourseIndex(periodCourses.length); // nuevo periodo en modo edicion
@@ -85,7 +86,16 @@ function HistoryPage({ showAlert }) {
   // editar materia
   const updatePeriodCourseField = (index, field, value) => {
     const updatedCourses = [...periodCourses];
-    updatedCourses[index][field] = value;
+
+    if (field === "status") {
+      updatedCourses[index].status = value;
+      updatedCourses[index].grade = null;
+    } else {
+      updatedCourses[index][field] = value;
+    }
+
+    console.log(updatedCourses);
+
     setPeriodCourses(updatedCourses);
   };
   // guardar materia
@@ -115,7 +125,7 @@ function HistoryPage({ showAlert }) {
       handleCloseDialog();
       showAlert("Cursada Creada", "success");
     } catch (error) {
-      console.error("error al crear el period:", error.response.data.message);
+      console.error("error al crear el period:", error.response.data);
       showAlert(
         error.response.data.message ===
           "A period for this semester already exists."
@@ -126,15 +136,21 @@ function HistoryPage({ showAlert }) {
     }
   };
 
-  // dias y años
-  const days = [
-    { english: "monday", spanish: "Lunes" },
-    { english: "tuesday", spanish: "Martes" },
-    { english: "wednesday", spanish: "Miércoles" },
-    { english: "thursday", spanish: "Jueves" },
-    { english: "friday", spanish: "Viernes" },
-    { english: "saturday", spanish: "Sábado" },
-  ];
+  // opciones de grade segun status
+  const getValidGrades = (status) => {
+    switch (status) {
+      case "approved":
+        return [4, 5, 6];
+      case "promoted":
+        return [7, 8, 9, 10];
+      case "disapproved":
+        return [1, 2, 3];
+      default:
+        return [];
+    }
+  };
+
+  // años
   const currentYear = new Date().getFullYear();
   const years = Array.from(
     { length: currentYear - 2009 },
@@ -251,7 +267,13 @@ function HistoryPage({ showAlert }) {
                 >
                   <Typography>{"Materias"}</Typography>
                   <Tooltip title="Agregar Materia">
-                    <IconButton onClick={addCourse}>
+                    <IconButton
+                      onClick={addCourse}
+                      sx={{
+                        visibility:
+                          periodCourses.length < 5 ? "visible" : "hidden",
+                      }}
+                    >
                       <AddIcon />
                     </IconButton>
                   </Tooltip>
@@ -320,14 +342,9 @@ function HistoryPage({ showAlert }) {
                         )}
                       </ListItemAvatar>
                       {editingPeriodCourseIndex === index ? (
-                        <Box
-                          display="flex"
-                          flexDirection="column"
-                          gap={1.5}
-                          sx={{ width: "75%" }}
-                        >
+                        <Box sx={{ width: "80%" }}>
                           <Grid container size={12} spacing={1.5}>
-                            <Grid size={{ xs: 12, md: 12, lg: 6 }}>
+                            <Grid size={{ xs: 12, xl: 6 }}>
                               <Autocomplete
                                 value={
                                   courses.find(
@@ -365,7 +382,7 @@ function HistoryPage({ showAlert }) {
                               />
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 12, lg: 6 }}>
+                            <Grid size={{ xs: 12, lg: 8, xl: 3.5 }}>
                               <FormControl fullWidth>
                                 <InputLabel size="small">Estado</InputLabel>
                                 <Select
@@ -392,6 +409,37 @@ function HistoryPage({ showAlert }) {
                                   <MenuItem value={"in_progress"}>
                                     Cursando
                                   </MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, lg: 4, xl: 2.5 }}>
+                              <FormControl fullWidth>
+                                <InputLabel size="small">Nota</InputLabel>
+                                <Select
+                                  value={course.grade || ""}
+                                  label="Nota"
+                                  size="small"
+                                  onChange={(event) =>
+                                    updatePeriodCourseField(
+                                      index,
+                                      "grade",
+                                      event.target.value
+                                    )
+                                  }
+                                  disabled={
+                                    !course.status ||
+                                    course.status === "in_progress"
+                                  }
+                                >
+                                  {getValidGrades(course.status).map(
+                                    (grade) => (
+                                      <MenuItem key={grade} value={grade}>
+                                        {grade}
+                                      </MenuItem>
+                                    )
+                                  )}
+                                  <MenuItem value={null}>-</MenuItem>
                                 </Select>
                               </FormControl>
                             </Grid>

@@ -75,10 +75,12 @@ function CoursePage({ showAlert }) {
   const [schedules, setSchedules] = React.useState([]);
   const [editingScheduleIndex, setEditingScheduleIndex] = React.useState(null);
 
-  // useStates de errores - periodos en los q se curso - indice - editCourseMode - editPeriodMode
+  // useStates de errores
   const [errors, setErrors] = React.useState({});
+  // periodos en los q se curso, y su indice
   const [coursePeriods, setCoursePeriods] = React.useState([]);
   const [selectedPeriodIndex, setSelectedPeriodIndex] = React.useState(null);
+  // modo edicion de course y period
   const [editCourseMode, setEditCourseMode] = React.useState(false);
   const [editPeriodMode, setEditPeriodMode] = React.useState(false);
 
@@ -155,18 +157,19 @@ function CoursePage({ showAlert }) {
     }
   }, [course, selectedPeriod]);
 
-  // resetear las notas cuando el status cambia
-  React.useEffect(() => {
-    setGrade(null);
-    setFinalGrade(null);
-  }, [status]);
-
   // cargar campos al cancelar guardar
   React.useEffect(() => {
     if (!editPeriodMode) {
       resetPeriodFields();
     }
   }, [coursePeriods]);
+
+  // forzamos recarga (para el navigate de Semester)
+  React.useEffect(() => {
+    if (course && !selectedPeriod) {
+      // no hacemos nada
+    }
+  }, [course, periods, selectedPeriod, coursePeriods]);
 
   // verificaciones
   if (loading) return <LoadingX />;
@@ -303,6 +306,7 @@ function CoursePage({ showAlert }) {
     setEditingScheduleIndex(false);
     try {
       await updatePeriodRequest(selectedPeriod._id, updatedPeriod);
+      console.log("updatedPeriod", updatedPeriod);
       showAlert("Materia Editada", "info", <DoneIcon />);
       console.log("course (period) editado");
     } catch (error) {
@@ -343,62 +347,15 @@ function CoursePage({ showAlert }) {
 
   // manejo de cambios del period
   const handleChangeStatus = (event) => {
-    setErrors({});
+    setGrade(null); // Reiniciar nota
+    setFinalGrade(null); // Reiniciar nota final
     setStatus(event.target.value);
   };
   const handleChangeGrade = (event) => {
-    const newGrade = event.target.value;
-
-    if (newGrade === null) {
-      setErrors((prevErrors) => ({ ...prevErrors, grade: "" }));
-      setGrade(newGrade);
-      return;
-    }
-
-    let error = "";
-    if (status === "approved" && (newGrade < 4 || newGrade > 6)) {
-      error = 'Nota entre 4 y 6 para estar "Aprobada"';
-    } else if (status === "promoted" && (newGrade < 7 || newGrade > 10)) {
-      error = 'Nota entre 7 y 10 para la "Promocion"';
-    } else if (status === "disapproved" && (newGrade < 1 || newGrade > 3)) {
-      error = 'Nota entre 1 y 3 para estar "Desaprobada"';
-    } else if (status === "in_progress") {
-      error = "Actualmente cursando.";
-    }
-
-    if (error) {
-      setErrors((prevErrors) => ({ ...prevErrors, grade: error }));
-    } else {
-      setErrors((prevErrors) => ({ ...prevErrors, grade: "" }));
-      setGrade(newGrade); // solo actualiza el estado si no hay error
-    }
+    setGrade(event.target.value);
   };
   const handleChangeFinalGrade = (event) => {
-    const newFinalGrade = event.target.value;
-
-    if (newFinalGrade === null) {
-      setErrors((prevErrors) => ({ ...prevErrors, finalGrade: "" }));
-      setFinalGrade(newFinalGrade);
-      return;
-    }
-
-    let error = "";
-    if (
-      status === "promoted" ||
-      status === "in_progress" ||
-      selectedCourse.status === "disapproved"
-    ) {
-      error = 'Se necestia materia "Aprobada"';
-    } else if (status === "approved" && newFinalGrade < 4) {
-      error = 'Al menos 4 para estar "Aprobada"';
-    }
-
-    if (error) {
-      setErrors((prevErrors) => ({ ...prevErrors, finalGrade: error }));
-    } else {
-      setErrors((prevErrors) => ({ ...prevErrors, finalGrade: "" }));
-      setFinalGrade(newFinalGrade); // Solo actualiza el estado si no hay error
-    }
+    setFinalGrade(event.target.value);
   };
   const handleChangeBuilding = (event) => {
     setBuilding(event.target.value);
@@ -466,6 +423,20 @@ function CoursePage({ showAlert }) {
     setSchedules(updatedSchedules);
   };
 
+  // obtener grades validas segun el status
+  const getValidGrades = (status) => {
+    switch (status) {
+      case "approved":
+        return [4, 5, 6];
+      case "promoted":
+        return [7, 8, 9, 10];
+      case "disapproved":
+        return [1, 2, 3];
+      default:
+        return [];
+    }
+  };
+
   // switchear entre periodos
   const handlePreviousPeriod = () => {
     setSelectedPeriodIndex((prev) => Math.max(prev - 1, 0));
@@ -478,7 +449,7 @@ function CoursePage({ showAlert }) {
     setEditPeriodMode(false);
   };
 
-  // dias y años
+  // dias
   const days = [
     { english: "monday", spanish: "Lunes" },
     { english: "tuesday", spanish: "Martes" },
@@ -487,11 +458,22 @@ function CoursePage({ showAlert }) {
     { english: "friday", spanish: "Viernes" },
     { english: "saturday", spanish: "Sábado" },
   ];
+  //años
   const currentYear = new Date().getFullYear();
   const years = Array.from(
     { length: currentYear - 2009 },
     (_, index) => 2010 + index
   );
+  // horarios
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 8; hour <= 22; hour++) {
+      times.push(`${hour}:00`);
+      if (hour !== 22) times.push(`${hour}:30`);
+    }
+    return times;
+  };
+  const timeOptions = generateTimeOptions();
 
   return (
     <div>
@@ -796,7 +778,7 @@ function CoursePage({ showAlert }) {
                 <Select
                   value={status || ""}
                   label="Estado"
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={handleChangeStatus}
                   disabled={!editPeriodMode}
                 >
                   <MenuItem value="approved">Aprobada</MenuItem>
@@ -814,28 +796,17 @@ function CoursePage({ showAlert }) {
                   value={grade || ""}
                   label="Nota"
                   onChange={handleChangeGrade}
-                  disabled={!editPeriodMode}
-                  sx={{
-                    ".MuiSelect-icon": {
-                      display: editCourseMode ? "block" : "none", // ocultar la flecha
-                    },
-                  }}
+                  disabled={
+                    !editPeriodMode || !status || status === "in_progress"
+                  }
                 >
-                  <MenuItem value={1}>1</MenuItem>
-                  <MenuItem value={2}>2</MenuItem>
-                  <MenuItem value={3}>3</MenuItem>
-                  <MenuItem value={4}>4</MenuItem>
-                  <MenuItem value={5}>5</MenuItem>
-                  <MenuItem value={6}>6</MenuItem>
-                  <MenuItem value={7}>7</MenuItem>
-                  <MenuItem value={8}>8</MenuItem>
-                  <MenuItem value={9}>9</MenuItem>
-                  <MenuItem value={10}>10</MenuItem>
+                  {getValidGrades(status).map((grade) => (
+                    <MenuItem key={grade} value={grade}>
+                      {grade}
+                    </MenuItem>
+                  ))}
                   <MenuItem value={null}>-</MenuItem>
                 </Select>
-                {errors.grade && (
-                  <FormHelperText>{errors.grade}</FormHelperText>
-                )}
               </FormControl>
             </Grid>
 
@@ -846,30 +817,15 @@ function CoursePage({ showAlert }) {
                   value={finalGrade || ""}
                   label="Nota Final"
                   onChange={handleChangeFinalGrade}
-                  disabled={
-                    !editPeriodMode || selectedCourse.status === "approved"
-                  }
-                  sx={{
-                    ".MuiSelect-icon": {
-                      display: editCourseMode ? "block" : "none", // ocultar la flecha
-                    },
-                  }}
+                  disabled={!editPeriodMode || status !== "approved"}
                 >
-                  <MenuItem value={1}>1</MenuItem>
-                  <MenuItem value={2}>2</MenuItem>
-                  <MenuItem value={3}>3</MenuItem>
-                  <MenuItem value={4}>4</MenuItem>
-                  <MenuItem value={5}>5</MenuItem>
-                  <MenuItem value={6}>6</MenuItem>
-                  <MenuItem value={7}>7</MenuItem>
-                  <MenuItem value={8}>8</MenuItem>
-                  <MenuItem value={9}>9</MenuItem>
-                  <MenuItem value={10}>10</MenuItem>
+                  {[4, 5, 6, 7, 8, 9, 10].map((grade) => (
+                    <MenuItem key={grade} value={grade}>
+                      {grade}
+                    </MenuItem>
+                  ))}
                   <MenuItem value={null}>-</MenuItem>
                 </Select>
-                {errors.finalGrade && (
-                  <FormHelperText>{errors.finalGrade}</FormHelperText>
-                )}
               </FormControl>
             </Grid>
 
@@ -1201,33 +1157,46 @@ function CoursePage({ showAlert }) {
                           <Grid container size={12} spacing={1.5}>
                             <Grid container size={12} spacing={1.5}>
                               <Grid size={{ sm: 12, md: 6 }}>
-                                <TextField
-                                  label="Hora Inicio"
-                                  value={schedule.startTime}
-                                  onChange={(e) =>
+                                <Autocomplete
+                                  options={timeOptions}
+                                  value={schedule.startTime || ""}
+                                  onChange={(event, newValue) =>
                                     updateScheduleField(
                                       index,
                                       "startTime",
-                                      e.target.value
+                                      newValue
                                     )
                                   }
-                                  size="small"
-                                  fullWidth
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      label="Hora Inicio"
+                                      size="small"
+                                      fullWidth
+                                    />
+                                  )}
                                 />
                               </Grid>
+
                               <Grid size={{ sm: 12, md: 6 }}>
-                                <TextField
-                                  label="Hora Fin"
-                                  value={schedule.endTime}
-                                  onChange={(e) =>
+                                <Autocomplete
+                                  options={timeOptions}
+                                  value={schedule.endTime || ""}
+                                  onChange={(event, newValue) =>
                                     updateScheduleField(
                                       index,
                                       "endTime",
-                                      e.target.value
+                                      newValue
                                     )
                                   }
-                                  size="small"
-                                  fullWidth
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      label="Hora Fin"
+                                      size="small"
+                                      fullWidth
+                                    />
+                                  )}
                                 />
                               </Grid>
                             </Grid>

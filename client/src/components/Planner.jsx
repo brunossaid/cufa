@@ -187,22 +187,6 @@ export default function Planner({ courses, plan, periods }) {
     }
   };
 
-  // crear el array de celdas a partir del estado
-  const preparePlanData = () => {
-    const cells = Object.entries(schedule).map(([key, color]) => {
-      const [day, hour] = key.split("-"); // separar el dia y la hora del key
-      const course = activeCourses.find((course) => course.color === color); // buscar el curso asociado al color
-
-      return {
-        day,
-        hour: parseInt(hour, 10), // convertir la hora a numero
-        courseCode: course?.code || null, // usar el codigo del curso, o null si no existe
-      };
-    });
-
-    return cells;
-  };
-
   // cargar las celdas y activeCourses del plan al cargar la pagina
   const initializeSchedule = () => {
     const initialSchedule = {};
@@ -280,7 +264,12 @@ export default function Planner({ courses, plan, periods }) {
             {/* horarios (abajo) */}
             <TableFooter>
               <TableRow>
-                <TableCell></TableCell>
+                <TableCell
+                  sx={{
+                    padding: "4px",
+                    border: "1px solid #303233",
+                  }}
+                ></TableCell>
                 {hours.map((hour) => (
                   <TableCell
                     key={hour}

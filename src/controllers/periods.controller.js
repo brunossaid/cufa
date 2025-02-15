@@ -17,7 +17,6 @@ export const createPeriod = async (req, res) => {
   try {
     const { year, semester, courses } = req.body;
 
-    // Check if a period with the same year, semester, and user already exists
     const existingPeriod = await Period.findOne({
       user: req.user.id,
       year,
@@ -111,6 +110,49 @@ export const deleteCourseFromPeriod = async (req, res) => {
     }
 
     return res.json(updatedPeriod);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// agregar course al period
+export const addCourseToPeriod = async (req, res) => {
+  try {
+    const { periodId } = req.params;
+    const { courseId, status, grade } = req.body;
+
+    const period = await Period.findById(periodId);
+    if (!period) {
+      return res.status(404).json({ message: "Cursada no encontrado" });
+    }
+
+    // verificar si ya hay 5 cursos en el period
+    if (period.courses.length >= 5) {
+      return res
+        .status(400)
+        .json({ message: "La cursada ya tiene 5 materias" });
+    }
+
+    // verifica si el course ya existe en el period
+    const courseExists = period.courses.some(
+      (course) => course.courseId.toString() === courseId
+    );
+    if (courseExists) {
+      return res
+        .status(400)
+        .json({ message: "Esa materia ya esta en este cuatrimestre" });
+    }
+
+    const newCourse = {
+      courseId,
+      status,
+      grade: grade || null,
+    };
+
+    period.courses.push(newCourse);
+
+    await period.save();
+    return res.json(period);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

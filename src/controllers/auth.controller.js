@@ -147,3 +147,63 @@ export const verifyToken = async (req, res) => {
     });
   });
 };
+
+export const updateProfile = async (req, res) => {
+  const { username, email, password } = req.body;
+  console.log("HOLAA");
+
+  try {
+    // buscar usuario
+    const user = await User.findById(req.user.id);
+    if (!user)
+      return res.status(404).json({ message: "Usuario no encontrado" });
+
+    // actualizar datos, si estan presentes
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (password) user.password = await bcrypt.hash(password, 10); // encriptar
+
+    // guardar
+    await user.save();
+
+    res.json({ message: "Perfil actualizado correctamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al actualizar perfil" });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const userFound = await User.findById(req.user.id);
+    if (!userFound) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // verificar contraseña actual
+    const isMatch = await bcrypt.compare(currentPassword, userFound.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect current password" });
+    }
+
+    // cifrar la nueva contraseña
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // actualizar la contraseña en db
+    userFound.password = newPasswordHash;
+    await userFound.save();
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+      user: {
+        id: userFound._id,
+        username: userFound.username,
+        email: userFound.email,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};

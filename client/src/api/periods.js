@@ -33,10 +33,20 @@ export const updatePeriodRequest = (periodId, period) => {
   });
 };
 
-// eliminar una materia de un período
+// eliminar course de un period
 export const deleteCourseFromPeriodRequest = (periodId, courseId) => {
   const token = Cookies.get("token") || localStorage.getItem("authToken");
   return axios.delete(`${API}/periods/${periodId}/courses/${courseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+// agregar course a un period
+export const addCourseToPeriodRequest = (periodId, courseData) => {
+  const token = Cookies.get("token") || localStorage.getItem("authToken");
+  return axios.post(`${API}/periods/${periodId}/courses`, courseData, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

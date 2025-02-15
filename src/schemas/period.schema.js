@@ -21,7 +21,7 @@ export const createPeriodSchema = z.object({
       status: z.enum(["approved", "promoted", "disapproved", "in_progress"], {
         required_error: "Status is required",
       }),
-      grade: z.number().min(0).max(10).optional(),
+      grade: z.number().min(0).max(10).nullable().optional(),
       finalGrade: z.number().min(0).max(10).optional(),
       building: z.string().trim().optional(),
       classroom: z.string().trim().optional(),

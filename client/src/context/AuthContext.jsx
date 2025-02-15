@@ -4,6 +4,7 @@ import {
   loginRequest,
   verifyTokenRequest,
   logoutRequest,
+  updatePasswordRequest,
 } from "../api/auth";
 import { getCoursesRequest } from "../api/courses";
 import { getPlansRequest } from "../api/plans";
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     console.log("signin res: ", res.data);
   };
 
+  // logout
   const logout = async () => {
     Cookies.remove("token"); // eliminar la cookie del token
     localStorage.removeItem("authToken");
@@ -56,6 +58,20 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     setCourses([]); // limpiar las materias o cualquier otro dato del usuario
     console.log("User logged out successfully");
+  };
+
+  // cambiar contraseña
+  const updatePassword = async (currentPassword, newPassword) => {
+    try {
+      const res = await updatePasswordRequest(currentPassword, newPassword);
+      if (res.data) {
+        console.log("contraseña cambiada");
+        setUser(res.data);
+      }
+    } catch (error) {
+      console.error("error al cambiar la contraseña: ", error);
+      alert("Error al cambiar la contraseña");
+    }
   };
 
   // materias
@@ -143,6 +159,7 @@ export const AuthProvider = ({ children }) => {
         signup,
         signin,
         user,
+        setUser,
         isAuthenticated,
         setIsAuthenticated,
         courses,
@@ -153,6 +170,7 @@ export const AuthProvider = ({ children }) => {
         setPeriods,
         logout,
         loading,
+        updatePassword,
       }}
     >
       {children}

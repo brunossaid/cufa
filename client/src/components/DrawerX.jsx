@@ -94,10 +94,9 @@ export default function DrawerX({ showAlert, changeColorMode, colorMode }) {
               <AccountCircle />
             </IconButton>
             <Menu
-              id="menu-appbar"
               anchorEl={anchorEl}
               anchorOrigin={{
-                vertical: "top",
+                vertical: "bottom",
                 horizontal: "right",
               }}
               keepMounted
@@ -108,8 +107,15 @@ export default function DrawerX({ showAlert, changeColorMode, colorMode }) {
               open={Boolean(anchorEl)}
               onClose={handleClose}
             >
-              <MenuItem onClick={handleClose}>Profile</MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  navigate("/profile");
+                  handleClose();
+                }}
+              >
+                Perfil
+              </MenuItem>
+              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
             </Menu>
           </div>
         </Toolbar>
