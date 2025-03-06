@@ -13,13 +13,20 @@ export const createCourseSchema = z.object({
     .number({ required_error: "Workload is required" })
     .positive({ message: "Workload must be positive" }),
   year: z.union(
-    [z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)],
+    [
+      z.literal(1),
+      z.literal(2),
+      z.literal(3),
+      z.literal(4),
+      z.literal(5),
+      z.literal(null),
+    ],
     { required_error: "Year is required" }
   ),
-  semester: z.union([z.literal(1), z.literal(2)], {
+  semester: z.union([z.literal(1), z.literal(2), z.literal(null)], {
     required_error: "Semester is required",
   }),
-  type: z.enum(["mandatory", "optional"], {
+  type: z.enum(["mandatory", "optional", "extraescolar"], {
     required_error: "Type is required",
   }),
   prerequisites: z

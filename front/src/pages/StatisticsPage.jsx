@@ -18,7 +18,7 @@ import { LineChart } from "@mui/x-charts/LineChart";
 
 function StatisticsPage() {
   // extraer datos del contexto
-  const { user, courses, periods, loading } = useAuth();
+  const { user, courses, periods, optionalSlots, loading } = useAuth();
 
   // buscar entre los periods el status
   const getStatus = (courseId) => {
@@ -108,18 +108,96 @@ function StatisticsPage() {
         100
     ) || 0;
 
-  // titulo intermedio
-  const approvedPercentage123 =
-    Math.round(
-      (courses.filter(
+  // linearprogress de titulos
+  const getApprovalDetails = () => {
+    // lista de opcionales aprobadas
+    const approvedOptionalCourses = courses.filter(
+      (course) =>
+        course.type === "optional" &&
+        (getStatus(course._id) === "approved" ||
+          getStatus(course._id) === "promoted")
+    );
+
+    let result = {};
+
+    // para titulo intermedio
+    let approvedCount123 = 0;
+    let totalCourses123 = 0;
+
+    // para titulo final
+    let approvedCountFinal = 0;
+    let totalCoursesFinal = 0;
+
+    // recorremos los 5 años
+    for (let year = 1; year <= 5; year++) {
+      // total de materias y slots por año
+      const totalCourses = [
+        ...courses.filter((course) => course.year === year),
+        ...optionalSlots.filter((slot) => slot.year === year),
+      ].length;
+
+      // materias aprobadas en el año
+      let mandatoryApprovedCoursesCount = courses.filter(
         (course) =>
-          ([1, 2, 3].includes(course.year) &&
-            getStatus(course._id) == "approved") ||
-          getStatus(course._id) === "promoted"
-      ).length /
-        courses.filter((course) => [1, 2, 3].includes(course.year)).length) *
-        100
-    ) || 0;
+          course.year === year &&
+          (getStatus(course._id) === "approved" ||
+            getStatus(course._id) === "promoted")
+      ).length;
+
+      // slots en el año
+      let slotsCount = optionalSlots.filter(
+        (slot) => slot.year === year
+      ).length;
+
+      // aprobadas totales
+      let approvedCount = mandatoryApprovedCoursesCount;
+
+      for (
+        let i = 0;
+        i < slotsCount && approvedOptionalCourses.length > 0;
+        i++
+      ) {
+        // si hay opcionales aprobadas:
+        if (approvedOptionalCourses.length > 0) {
+          approvedOptionalCourses.shift(); // eliminamos una
+          approvedCount++; // incrementamos la cuenta total
+        }
+      }
+
+      // si el año es 1, 2 o 3, sumar para titulo intermedio
+      if (year <= 3) {
+        totalCourses123 += totalCourses;
+        approvedCount123 += approvedCount;
+      }
+
+      // sumar en los 5 años, para el titulo final
+      totalCoursesFinal += totalCourses;
+      approvedCountFinal += approvedCount;
+    }
+
+    // porcentaje del titulo intermedio
+    const percentage123 = Math.round(
+      (approvedCount123 / totalCourses123) * 100
+    );
+    // agregar el resultado para los 3 primeros años
+    result[123] = {
+      text: `${approvedCount123}/${totalCourses123} Aprobadas`,
+      percentage: percentage123,
+    };
+
+    // porcentaje del titulo final
+    const percentageFinal = Math.round(
+      (approvedCountFinal / totalCoursesFinal) * 100
+    );
+    // agregar el resultado para los 5 años
+    result[12345] = {
+      text: `${approvedCountFinal}/${totalCoursesFinal} Aprobadas`,
+      percentage: percentageFinal,
+    };
+
+    return result;
+  };
+  const approvalData = getApprovalDetails();
 
   // courses aprobadas/cursadas por period
   const getCoursesStatsPerPeriod = (periods) => {
@@ -147,7 +225,7 @@ function StatisticsPage() {
   return (
     <div>
       <h1>Estadisticas</h1>
-      <Grid container spacing={2} marginX={10}>
+      <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card sx={{ borderRadius: 2 }}>
             <Typography variant="h5" marginLeft={3} marginTop={2}>
@@ -257,18 +335,10 @@ function StatisticsPage() {
               >
                 <SchoolIcon fontSize={"medium"} sx={{ marginRight: 1 }} />
                 <Box sx={{ flexGrow: 1 }}>
-                  <Tooltip
-                    title={`${
-                      courses.filter(
-                        (course) =>
-                          getStatus(course._id) === "approved" ||
-                          getStatus(course._id) === "promoted"
-                      ).length
-                    }/${courses.length} Aprobadas`}
-                  >
+                  <Tooltip title={approvalData[12345]?.text}>
                     <LinearProgress
                       variant="determinate"
-                      value={approvedPercentageTotal}
+                      value={approvalData[12345]?.percentage}
                       sx={{ height: 20, borderRadius: 5 }}
                     />
                   </Tooltip>
@@ -277,7 +347,7 @@ function StatisticsPage() {
                   sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
                   variant="h6"
                 >
-                  {approvedPercentageTotal}%
+                  {approvalData[12345]?.percentage}%
                 </Typography>
               </Box>
 
@@ -293,23 +363,10 @@ function StatisticsPage() {
               >
                 <HubIcon fontSize={"medium"} sx={{ marginRight: 1 }} />
                 <Box sx={{ flexGrow: 1 }}>
-                  <Tooltip
-                    title={`${
-                      courses.filter(
-                        (course) =>
-                          [1, 2, 3].includes(course.year) &&
-                          (getStatus(course._id) === "approved" ||
-                            getStatus(course._id) === "promoted")
-                      ).length
-                    }/${
-                      courses.filter((course) =>
-                        [1, 2, 3].includes(course.year)
-                      ).length
-                    } Aprobadas`}
-                  >
+                  <Tooltip title={approvalData[123]?.text}>
                     <LinearProgress
                       variant="determinate"
-                      value={approvedPercentage123}
+                      value={approvalData[123]?.percentage}
                       color="secondary"
                       sx={{ height: 20, borderRadius: 5 }}
                     />
@@ -319,7 +376,7 @@ function StatisticsPage() {
                   sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
                   variant="h6"
                 >
-                  {approvedPercentage123}%
+                  {approvalData[123]?.percentage}%
                 </Typography>
               </Box>
             </Stack>

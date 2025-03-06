@@ -19,11 +19,14 @@ export const createPlanSchema = z.object({
           .number({ required_error: "Hour is required" })
           .min(0, { message: "Hour must be between 0 and 23" })
           .max(23, { message: "Hour must be between 0 and 23" }),
-        courseCode: z
-          .string({ required_error: "Course code is required" })
+        itemId: z
+          .string({ required_error: "Item ID is required" })
           .trim()
-          .min(1, { message: "Course code cannot be empty" }),
+          .min(1, { message: "Item ID cannot be empty" }),
+        itemType: z.enum(["course", "extraTask"], {
+          required_error: "Item type is required",
+        }),
       })
     )
-    .optional(), // Hacemos que 'cells' no sea obligatorio
+    .optional(), // 'cells' sigue siendo opcional
 });

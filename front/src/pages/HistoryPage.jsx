@@ -3,10 +3,12 @@ import {
   Autocomplete,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   IconButton,
   InputLabel,
@@ -165,7 +167,7 @@ function HistoryPage({ showAlert }) {
         justifyContent="space-between"
         marginBottom={2.5}
       >
-        <h1>Historial</h1>
+        <h1 style={{ margin: 0 }}>Historial</h1>
 
         <Button
           variant={"text"}
@@ -193,15 +195,26 @@ function HistoryPage({ showAlert }) {
           return acc;
         }, {})
       ).map((yearPeriods, index) => (
-        <Grid container size={12} spacing={2} key={index}>
-          {yearPeriods.map((period) => (
-            <Grid size={{ xs: 12, xl: 6 }} key={period._id}>
-              <Semester
-                {...{ period, periods, setPeriods, courses, showAlert }}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        <>
+          <Divider sx={{ marginY: 3 }}>
+            <Chip label={yearPeriods[0].year} size="small" color="info" />
+          </Divider>
+          <Grid
+            container
+            size={12}
+            spacing={2}
+            key={index}
+            sx={{ marginBottom: 5 }}
+          >
+            {yearPeriods.map((period) => (
+              <Grid size={{ xs: 12, xl: 6 }} key={period._id}>
+                <Semester
+                  {...{ period, periods, setPeriods, courses, showAlert }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </>
       ))}
 
       {/* dialog de agregar materia*/}

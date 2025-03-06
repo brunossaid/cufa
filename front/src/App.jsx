@@ -66,6 +66,9 @@ function AppContent() {
     },
   });
 
+  // drawer
+  const [openDrawer, setOpenDrawer] = useState(true);
+
   return (
     <Box
       sx={{
@@ -102,10 +105,18 @@ function AppContent() {
         {isAuthenticated === true ? (
           // si el usuario esta autenticado, se muestran las rutas protegidas
           <>
-            <DrawerX {...{ showAlert, changeColorMode, colorMode }} />
+            <DrawerX
+              {...{
+                showAlert,
+                changeColorMode,
+                colorMode,
+                openDrawer,
+                setOpenDrawer,
+              }}
+            />
             <Box
               sx={{
-                marginLeft: "300px",
+                marginLeft: openDrawer ? "300px" : "125px",
                 marginRight: "60px",
                 marginTop: "100px",
               }}

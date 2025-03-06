@@ -238,8 +238,8 @@ export default function Semester({
   };
 
   return (
-    <div style={{ marginBottom: 22 }}>
-      <Card sx={{ width: "100%" }}>
+    <div style={{ height: "100%" }}>
+      <Card sx={{ width: "100%", height: "100%" }}>
         <CardHeader
           title={period.year}
           subheader={`${period.semester}º Cuatrimestre`}
@@ -319,29 +319,38 @@ export default function Semester({
                     </TableCell>
 
                     <TableCell sx={{ width: "18%" }} align="center">
-                      <Tooltip title={"Ver más"}>
-                        <IconButton
-                          onClick={() => {
-                            handleNavigate(courseData.code, period._id);
-                          }}
-                          sx={{ padding: 0, marginRight: 1 }}
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={"Eliminar"}>
-                        <IconButton
-                          onClick={() => {
-                            handleOpendialogCourseDelete(
-                              period._id,
-                              course.courseId
-                            );
-                          }}
-                          sx={{ padding: 0, marginLeft: 1 }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1.5,
+                          justifyContent: "center",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <Tooltip title={"Ver más"}>
+                          <IconButton
+                            onClick={() => {
+                              handleNavigate(courseData.code, period._id);
+                            }}
+                            sx={{ padding: 0 }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={"Eliminar"}>
+                          <IconButton
+                            onClick={() => {
+                              handleOpendialogCourseDelete(
+                                period._id,
+                                course.courseId
+                              );
+                            }}
+                            sx={{ padding: 0 }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 );

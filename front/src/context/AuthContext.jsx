@@ -9,6 +9,8 @@ import {
 import { getCoursesRequest } from "../api/courses";
 import { getPlansRequest } from "../api/plans";
 import { getPeriodsRequest } from "../api/periods";
+import { getOptionalSlotsRequest } from "../api/optionalSlots";
+import { getExtraTasksRequest } from "../api/extraTasks";
 import Cookies from "js-cookie";
 
 export const AuthContext = createContext();
@@ -107,6 +109,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // slots de optativas
+  const [optionalSlots, setOptionalSlots] = useState([]);
+  const fetchOptionalSlots = async (user) => {
+    try {
+      const res = await getOptionalSlotsRequest(user.id);
+      setOptionalSlots(res.data);
+    } catch (error) {
+      console.log("Error fetching optionalSlots: ", error);
+    }
+  };
+
+  // actividades extra
+  const [extraTasks, setExtraTasks] = useState([]);
+  const fetchExtraTasks = async (user) => {
+    try {
+      const res = await getExtraTasksRequest(user.id);
+      setExtraTasks(res.data);
+    } catch (error) {
+      console.log("Error fetching extraTasks: ", error);
+    }
+  };
+
   // almacenar cookie para no desloguearse al actualizar
   useEffect(() => {
     const checkLogin = async () => {
@@ -140,6 +164,8 @@ export const AuthProvider = ({ children }) => {
           await fetchCourses(res.data);
           await fetchPlans(res.data);
           await fetchPeriods(res.data);
+          await fetchOptionalSlots(res.data);
+          await fetchExtraTasks(res.data);
         }
       } catch (error) {
         console.log("error: ", error);
@@ -168,6 +194,10 @@ export const AuthProvider = ({ children }) => {
         setPlans,
         periods,
         setPeriods,
+        optionalSlots,
+        setOptionalSlots,
+        extraTasks,
+        setExtraTasks,
         logout,
         loading,
         updatePassword,

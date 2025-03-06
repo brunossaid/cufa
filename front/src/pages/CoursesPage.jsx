@@ -30,9 +30,11 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/VisibilityRounded";
 import DeleteIcon from "@mui/icons-material/DeleteRounded";
+import BookmarkRemoveIcon from "@mui/icons-material/BookmarkRemoveRounded";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
-import styled from "styled-components";
+import BookmarkAddIcon from "@mui/icons-material/BookmarkAddRounded";
 import Grid from "@mui/material/Grid2";
 import OneIcon from "@mui/icons-material/LooksOneRounded";
 import TwoIcon from "@mui/icons-material/LooksTwoRounded";
@@ -45,6 +47,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import Slide from "@mui/material/Slide";
 import LoadingX from "../components/LoadingX";
+import {
+  createOptionalSlotRequest,
+  deleteOptionalSlotRequest,
+  getOptionalSlotsRequest,
+} from "../api/optionalSlots";
 
 // datos de las columnas
 const columns = [
@@ -90,30 +97,6 @@ const VirtuosoTableComponents = {
   )),
 };
 
-// estilo de la scrollbar
-const StyledPaper = styled(Paper)`
-  height: 700px;
-  width: 100%;
-  overflow-y: auto;
-
-  ::-webkit-scrollbar {
-    width: 9px; /* ancho del scrollbar */
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background-color: #161618; /* color de la barra */
-    border-radius: 10px; /* bordes redondeados */
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: #131314; /* color con el mouse arriba */
-  }
-
-  ::-webkit-scrollbar-track {
-    background-color: #282829; /* color del fondo */
-  }
-`;
-
 // transicion del dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -121,7 +104,15 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 function CoursesPage({ showAlert }) {
   // traer datos del contexto
-  const { courses, setCourses, periods, user, loading } = useAuth();
+  const {
+    courses,
+    setCourses,
+    periods,
+    optionalSlots,
+    setOptionalSlots,
+    user,
+    loading,
+  } = useAuth();
 
   // buscar entre los periods el status
   const getStatus = (courseId) => {
@@ -181,10 +172,10 @@ function CoursesPage({ showAlert }) {
       case "semester":
         return (
           <TableCell
-            colSpan={columns.length} // Ocupa todas las columnas.
+            colSpan={columns.length} // ocupa todas las columnas.
             align="center"
             style={{
-              backgroundColor: "#171717", // Gris para cuatrimestres.
+              backgroundColor: "#171717", // gris para cuatrimestres.
               fontStyle: "italic",
               color: "white",
             }}
@@ -195,10 +186,10 @@ function CoursesPage({ showAlert }) {
       case "title":
         return (
           <TableCell
-            colSpan={columns.length} // Ocupa todas las columnas.
+            colSpan={columns.length} // ocupa todas las columnas.
             align="center"
             style={{
-              backgroundColor: "#e683df", // Rosa para título intermedio.
+              backgroundColor: "#e683df", // rosa para título intermedio.
               fontWeight: "bold",
               color: "white",
             }}
@@ -206,9 +197,85 @@ function CoursesPage({ showAlert }) {
             {row.label}
           </TableCell>
         );
+      case "optionalSlot":
+        // para optionalSlots
+        return (
+          <>
+            <TableCell
+              align="center"
+              style={{
+                backgroundColor: getRowBackgroundColor(row._id),
+              }}
+            >
+              {row.code}
+            </TableCell>
+
+            <TableCell
+              align="left"
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
+            >
+              {row.name}
+            </TableCell>
+
+            <TableCell
+              align="center"
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
+            >
+              {row.workload}
+            </TableCell>
+
+            <TableCell
+              align="center"
+              style={{
+                backgroundColor:
+                  getStatus(row._id) === "approved" ||
+                  getStatus(row._id) === "promoted"
+                    ? getRowBackgroundColor(row._id)
+                    : "green", // verde si no esta aprobada
+              }}
+            >
+              -
+            </TableCell>
+
+            <TableCell
+              align="center"
+              style={{ backgroundColor: getRowBackgroundColor(row._id) }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                {row.code !== "-" && (
+                  <Tooltip title={"Ver más"}>
+                    <IconButton
+                      onClick={() => handleNavigate(row.code)}
+                      sx={{ padding: 0 }}
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                <Tooltip title={"Eliminar Slot"}>
+                  <IconButton
+                    onClick={() => handleOpenDialogDeleteSlot(row.slotId)}
+                    sx={{ padding: 0 }}
+                  >
+                    <DeleteOutlineIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </TableCell>
+          </>
+        );
       case "mandatory":
       case "optional":
-        // para "mandatory"/"optional" (materias)
+      case "extraescolar":
+        // para materias
         return (
           <>
             <TableCell
@@ -240,17 +307,17 @@ function CoursesPage({ showAlert }) {
                   getStatus(row._id) === "promoted"
                     ? getRowBackgroundColor(row._id)
                     : (row.prerequisites || []).length === 0 ||
-                      row.prerequisites.every((prerequisiteId) => {
-                        const course = courses.find(
-                          (c) => c._id === prerequisiteId
-                        );
-                        return course
-                          ? getStatus(course._id) === "approved" ||
-                              getStatus(course._id) === "promoted"
-                          : false;
-                      })
-                    ? "green" // verde si no hay prerequisites o si todas están aprobadas
-                    : getRowBackgroundColor(row._id), // color predeterminado
+                        row.prerequisites.every((prerequisiteId) => {
+                          const course = courses.find(
+                            (c) => c._id === prerequisiteId
+                          );
+                          return course
+                            ? getStatus(course._id) === "approved" ||
+                                getStatus(course._id) === "promoted"
+                            : false;
+                        })
+                      ? "green" // verde si no hay prerequisites o si todas están aprobadas
+                      : getRowBackgroundColor(row._id), // color predeterminado
               }}
             >
               {(row.prerequisites || []).length > 0 ? (
@@ -276,22 +343,31 @@ function CoursesPage({ showAlert }) {
               align="center"
               style={{ backgroundColor: getRowBackgroundColor(row._id) }}
             >
-              <Tooltip title={"Ver más"}>
-                <IconButton
-                  onClick={() => handleNavigate(row.code)}
-                  sx={{ padding: 0, marginRight: 1 }}
-                >
-                  <VisibilityIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={"Eliminar"}>
-                <IconButton
-                  onClick={() => handleOpenDialogDelete(row._id)}
-                  sx={{ padding: 0, marginLeft: 1 }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Tooltip>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Tooltip title="Ver más">
+                  <IconButton
+                    onClick={() => handleNavigate(row.code)}
+                    sx={{ padding: 0 }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Eliminar">
+                  <IconButton
+                    onClick={() => handleOpenDialogDelete(row._id)}
+                    sx={{ padding: 0 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </TableCell>
           </>
         );
@@ -327,10 +403,37 @@ function CoursesPage({ showAlert }) {
     resetFields();
   };
 
+  // dialog de agregar slot para optiativa
+  const [dialogAddSlot, setDialogAddSlot] = React.useState(false);
+  // abrir
+  const handleOpenDialogAddSlot = () => {
+    setDialogAddSlot(true);
+  };
+  // cerrar
+  const handleCloseDialogAddSlot = () => {
+    setDialogAddSlot(false);
+    resetFields();
+  };
+
+  // dialog de eliminar materia
+  const [dialogDeleteSlot, setDialogDeleteSlot] = React.useState(false);
+  const [slotToDelete, setSlotToDelete] = React.useState(null);
+  // abrir
+  const handleOpenDialogDeleteSlot = (optionalSlotId) => {
+    setSlotToDelete(optionalSlotId);
+    setDialogDeleteSlot(true);
+  };
+  // cerrar
+  const handleCloseDialogDeleteSlot = () => {
+    setDialogDeleteSlot(false);
+    setSlotToDelete(null);
+    resetFields();
+  };
+
   // guardar datos ingresados en variables
   const [code, setCode] = React.useState("");
   const handleChangeCode = (event) => {
-    setCode(event.target.value);
+    setCode(event.target.value.toUpperCase());
   };
   const [name, setName] = React.useState("");
   const handleChangeName = (event) => {
@@ -348,20 +451,41 @@ function CoursesPage({ showAlert }) {
   };
   const [type, setType] = React.useState("mandatory");
   const handleChangeType = (event, newType) => {
-    setType(newType);
+    if (newType !== null) {
+      setType(newType);
+
+      if (newType === "mandatory") {
+        setIsMandatory(true);
+        setYear(1);
+        setSemester(1);
+      } else {
+        setIsMandatory(false);
+        setYear(null);
+        setSemester(null);
+      }
+    }
   };
   const [year, setYear] = React.useState(1);
   const handleChangeYear = (event, newYear) => {
-    setYear(newYear);
+    if (newYear !== null) {
+      setYear(newYear);
+    }
   };
   const [semester, setSemester] = React.useState(1);
   const handleChangeSemester = (event, newSemester) => {
-    setSemester(newSemester);
+    if (newSemester !== null) {
+      setSemester(newSemester);
+    }
   };
   const [modality, setModality] = React.useState("presential");
   const handleChangeModality = (event, newValue) => {
-    setModality(newValue);
+    if (newValue !== null) {
+      setModality(newValue);
+    }
   };
+
+  // si el type NO ES mandatory, no se puede modificar el año y semester
+  const [isMandatory, setIsMandatory] = React.useState(true);
 
   // crear color aleatorio para la materia
   const getRandomColor = () => {
@@ -448,6 +572,53 @@ function CoursesPage({ showAlert }) {
     }
   };
 
+  // guardar optionalSlot
+  const handleSaveSlot = async () => {
+    const newOptionalSlot = {
+      year,
+      semester,
+      user: user.id,
+    };
+
+    try {
+      await createOptionalSlotRequest(newOptionalSlot);
+
+      // si no hubo errores, continuar con la logica
+      showAlert("Slot Creado", "success", <DoneIcon />);
+      resetFields();
+      fetchOptionalSlots();
+      handleCloseDialogAddSlot();
+    } catch (error) {
+      console.error("error: ", error.response?.data?.message || error.message);
+      showAlert("Error", "error");
+    }
+  };
+
+  // eliminar optionalSlot
+  const handleDeleteSlot = async () => {
+    if (slotToDelete) {
+      try {
+        await deleteOptionalSlotRequest(slotToDelete); // llama a la API para eliminar el plan
+        console.log("optionalSlot eliminado");
+
+        setOptionalSlots((prevOptionalSlots) =>
+          prevOptionalSlots.filter(
+            (optionalSlot) => optionalSlot._id !== slotToDelete
+          )
+        );
+
+        resetFields();
+        showAlert("Slot Eliminado", "error", <DeleteIcon />);
+      } catch (error) {
+        console.error(
+          "error al eliminar el optionalSlot:",
+          error.response.data.message
+        );
+      }
+      handleCloseDialogDeleteSlot();
+    }
+  };
+
   // resetear datos
   const resetFields = () => {
     setCode("");
@@ -463,10 +634,41 @@ function CoursesPage({ showAlert }) {
   // manejo de errores
   const [errors, setErrors] = React.useState({});
 
+  const toRoman = (num) => {
+    const romanNumerals = [
+      ["X", 10],
+      ["IX", 9],
+      ["V", 5],
+      ["IV", 4],
+      ["I", 1],
+    ];
+
+    let result = "";
+    for (let [letter, value] of romanNumerals) {
+      while (num >= value) {
+        result += letter;
+        num -= value;
+      }
+    }
+
+    return result;
+  };
+
   // crear las filas (materias y separadores)
-  const generateRows = (courses) => {
+
+  const generateRows = (courses, optionalSlots) => {
     const rows = [];
     let filteredCourses = [];
+    let filteredSlots = [];
+    let optionalSlotCounter = 1;
+    let approvedOptionalCourses = [];
+
+    approvedOptionalCourses = courses.filter(
+      (course) =>
+        course.type === "optional" &&
+        (getStatus(course._id) === "approved" ||
+          getStatus(course._id) === "promoted")
+    );
 
     // PRIMER AÑO
     rows.push(
@@ -474,98 +676,366 @@ function CoursesPage({ showAlert }) {
       { type: "semester", label: "1º Cuatrimestre" }
     );
 
+    // 1 año, 1c
     filteredCourses = courses.filter(
       (course) => course.year === 1 && course.semester === 1
-    ); // 1 año, 1c
-    rows.push(...filteredCourses, {
-      type: "semester",
-      label: "2º Cuatrimestre",
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 1 && slot.semester === 1
+    );
+
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
     });
 
+    rows.push({ type: "semester", label: "2º Cuatrimestre" });
+
+    // 1 año, 2c
     filteredCourses = courses.filter(
       (course) => course.year === 1 && course.semester === 2
-    ); // 1 año, 2c
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 1 && slot.semester === 2
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
+    });
+
     rows.push(
-      ...filteredCourses,
       { type: "year", label: "Segundo Año" },
       { type: "semester", label: "1º Cuatrimestre" }
     );
-
     // SEGUNDO AÑO
+    // 2 año, 1c
     filteredCourses = courses.filter(
       (course) => course.year === 2 && course.semester === 1
-    ); // 2 año, 1c
-    rows.push(...filteredCourses, {
-      type: "semester",
-      label: "2º Cuatrimestre",
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 2 && slot.semester === 1
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
     });
 
+    rows.push({ type: "semester", label: "2º Cuatrimestre" });
+
+    // 2 año, 2c
     filteredCourses = courses.filter(
       (course) => course.year === 2 && course.semester === 2
-    ); // 2 año, 2c
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 2 && slot.semester === 2
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
+    });
+
     rows.push(
-      ...filteredCourses,
       { type: "year", label: "Tercer Año" },
       { type: "semester", label: "1º Cuatrimestre" }
     );
 
     // TERCER AÑO
+    // 3 año, 1c
     filteredCourses = courses.filter(
       (course) => course.year === 3 && course.semester === 1
-    ); // 3 año, 1c
-    rows.push(...filteredCourses, {
-      type: "semester",
-      label: "2º Cuatrimestre",
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 3 && slot.semester === 1
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
     });
 
+    rows.push({ type: "semester", label: "2º Cuatrimestre" });
+
+    // 3 año, 2c
     filteredCourses = courses.filter(
       (course) => course.year === 3 && course.semester === 2
-    ); // 3 año, 2c
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 3 && slot.semester === 2
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
+    });
+
     rows.push(
-      ...filteredCourses,
       { type: "title", label: "Título Intermedio" },
       { type: "year", label: "Cuarto Año" },
       { type: "semester", label: "1º Cuatrimestre" }
     );
 
     // CUARTO AÑO
+    // 4 año, 1c
     filteredCourses = courses.filter(
       (course) => course.year === 4 && course.semester === 1
-    ); // 4 año, 1c
-    rows.push(...filteredCourses, {
-      type: "semester",
-      label: "2º Cuatrimestre",
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 4 && slot.semester === 1
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
     });
 
+    rows.push({ type: "semester", label: "2º Cuatrimestre" });
+
+    // 4 año, 2c
     filteredCourses = courses.filter(
       (course) => course.year === 4 && course.semester === 2
-    ); // 4 año, 2c
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 4 && slot.semester === 2
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
+    });
+
     rows.push(
-      ...filteredCourses,
       { type: "year", label: "Quinto Año" },
       { type: "semester", label: "1º Cuatrimestre" }
     );
 
     // QUINTO AÑO
+    // 5 año, 1c
     filteredCourses = courses.filter(
       (course) => course.year === 5 && course.semester === 1
-    ); // 5 año, 1c
-    rows.push(...filteredCourses, {
-      type: "semester",
-      label: "2º Cuatrimestre",
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 5 && slot.semester === 1
+    );
+    rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
     });
 
+    rows.push({ type: "semester", label: "2º Cuatrimestre" });
+
+    // 5 año, 2c
     filteredCourses = courses.filter(
       (course) => course.year === 5 && course.semester === 2
-    ); // 5 año, 2c
+    );
+    filteredSlots = optionalSlots.filter(
+      (slot) => slot.year === 5 && slot.semester === 2
+    );
     rows.push(...filteredCourses);
+
+    filteredSlots.forEach((slot) => {
+      if (approvedOptionalCourses.length > 0) {
+        const optionalCourse = {
+          ...approvedOptionalCourses[0],
+          type: "optionalSlot",
+          slotId: slot._id,
+        };
+        rows.push(optionalCourse);
+        approvedOptionalCourses.shift();
+      } else {
+        rows.push({
+          type: "optionalSlot",
+          code: "-",
+          name: `Optativa ${toRoman(optionalSlotCounter)}`,
+          workload: 4,
+          slotId: slot._id,
+        });
+      }
+      optionalSlotCounter++;
+    });
+
+    // materias opcionales/extracurriculares
+    rows.push(...courses.filter((course) => course.type === "optional"));
+    rows.push(...courses.filter((course) => course.type === "extraescolar"));
 
     return rows;
   };
-  const rowsFromCourses = generateRows(courses);
+
+  const rowsFromCourses = generateRows(courses, optionalSlots);
 
   // estado para las filas
   const [rows, setRows] = React.useState(rowsFromCourses);
+
+  // materias filtradas por type
+  const filteredRows = {
+    mandatory: rows.filter(
+      (row) =>
+        row.type === "mandatory" ||
+        row.type === "optionalSlot" ||
+        row.type === "year" ||
+        row.type === "semester" ||
+        row.type === "title"
+    ),
+    optional: rows.filter((row) => row.type === "optional"),
+    extraescolar: rows.filter((row) => row.type === "extraescolar"),
+  };
 
   // trar courses
   const fetchCourses = async () => {
@@ -573,18 +1043,29 @@ function CoursesPage({ showAlert }) {
       const response = await getCoursesRequest(user.id);
       setCourses(response.data);
     } catch (error) {
-      console.error("Error al cargar los courses:", error);
+      console.error("error al cargar los courses:", error);
+    }
+  };
+
+  // trar optionalSlots
+  const fetchOptionalSlots = async () => {
+    try {
+      const response = await getOptionalSlotsRequest(user.id);
+      setOptionalSlots(response.data);
+    } catch (error) {
+      console.error("error al cargar los optionalSlots:", error);
     }
   };
 
   React.useEffect(() => {
     fetchCourses();
+    fetchOptionalSlots();
   }, [user]);
 
   // que se actualicen las filas
   React.useEffect(() => {
-    setRows(generateRows(courses));
-  }, [courses]);
+    setRows(generateRows(courses, optionalSlots));
+  }, [courses, optionalSlots]);
 
   return (
     <div>
@@ -595,53 +1076,132 @@ function CoursesPage({ showAlert }) {
         marginBottom={2.5}
       >
         <h1 style={{ margin: 0 }}>Materias</h1>
-        <Button
-          variant={"text"}
-          onClick={handleOpenDialogAdd}
-          color="white"
-          endIcon={<AddCircleIcon />}
-          style={{
-            transition: "transform 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = "scale(1.05)";
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = "scale(1)";
-          }}
-        >
-          Agregar Materia
-        </Button>
+        <Box display="flex" alignItems="center">
+          <Tooltip title="Agregar espacio para optativa">
+            <IconButton
+              sx={{
+                marginRight: 1.5,
+                transition: "transform 0.2s ease",
+                "&:hover": {
+                  transform: "scale(1.15)",
+                },
+              }}
+              onClick={handleOpenDialogAddSlot}
+            >
+              <BookmarkAddIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Button
+            variant={"text"}
+            onClick={handleOpenDialogAdd}
+            color="white"
+            endIcon={<AddCircleIcon />}
+            style={{
+              transition: "transform 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1)";
+            }}
+          >
+            Agregar Materia
+          </Button>
+        </Box>
       </Box>
-      <StyledPaper>
+
+      {/* tabla principal */}
+      <TableVirtuoso
+        sx={{ marginBottom: 10 }}
+        data={filteredRows.mandatory}
+        components={VirtuosoTableComponents}
+        fixedHeaderContent={() => (
+          <TableRow>
+            {columns.map((column) => (
+              <TableCell
+                key={column.dataKey}
+                variant="head"
+                align={column.align}
+                style={{ width: column.width }}
+                sx={{ backgroundColor: "#282829", color: "white" }}
+              >
+                {column.label}
+              </TableCell>
+            ))}
+          </TableRow>
+        )}
+        itemContent={(index, row) => rowContent(index, row)}
+        style={{
+          width: "100%",
+          height: filteredRows.mandatory.length * 57 + 10,
+        }}
+      />
+
+      {/* tabla extracurriculares */}
+      {filteredRows.extraescolar.length > 0 && (
         <TableVirtuoso
-          data={rows}
+          sx={{ marginBottom: 10 }}
+          data={filteredRows.extraescolar}
           components={VirtuosoTableComponents}
           fixedHeaderContent={() => (
             <TableRow>
-              {columns.map((column) => (
-                <TableCell
-                  key={column.dataKey}
-                  variant="head"
-                  align={column.align}
-                  style={{ width: column.width }}
-                  sx={{ backgroundColor: "#282829", color: "white" }}
-                >
-                  {column.label}
-                </TableCell>
-              ))}
+              <TableCell
+                colSpan={columns.length}
+                sx={{
+                  backgroundColor: "#282829",
+                  color: "white",
+                  textAlign: "center",
+                }}
+              >
+                Materias Extracurriculares
+              </TableCell>
             </TableRow>
           )}
           itemContent={(index, row) => rowContent(index, row)}
+          style={{
+            width: "100%",
+            height: filteredRows.extraescolar.length * 57 + 57,
+          }}
         />
-      </StyledPaper>
+      )}
+
+      {/* tabla optativas */}
+      {filteredRows.optional.length > 0 && (
+        <TableVirtuoso
+          sx={{ marginBottom: 10 }}
+          data={filteredRows.optional}
+          components={VirtuosoTableComponents}
+          fixedHeaderContent={() => (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length}
+                sx={{
+                  backgroundColor: "#282829",
+                  color: "white",
+                  textAlign: "center",
+                }}
+              >
+                Materias Optativas
+              </TableCell>
+            </TableRow>
+          )}
+          itemContent={(index, row) => rowContent(index, row)}
+          style={{
+            width: "100%",
+            height: filteredRows.optional.length * 57 + 57,
+          }}
+        />
+      )}
+
       {/* dialog de agregar materia*/}
       <Dialog
         open={dialogAdd}
         onClose={handleCloseDialogAdd}
         TransitionComponent={Transition}
         sx={{
-          "& .MuiDialog-paper": { width: "50%", maxWidth: "none" },
+          "& .MuiDialog-paper": { width: "60%", maxWidth: "none" },
         }}
       >
         <DialogTitle>Agregar Nueva Materia</DialogTitle>
@@ -738,15 +1298,16 @@ function CoursesPage({ showAlert }) {
               />
             </Grid>
 
-            {/* fila 4: año - cuatrimestre - tipo */}
+            {/* fila 4: tipo - año - cuatrimestre  */}
             <Grid container size={12}>
-              <Grid size={{ xs: 12, sm: 12, md: 8, lg: 5 }}>
+              <Grid size={{ xs: 12, sm: 12, md: 8, lg: 4 }}>
                 <Typography gutterBottom>Año</Typography>
                 <ToggleButtonGroup
                   value={year}
                   exclusive
                   onChange={handleChangeYear}
                   fullWidth={true}
+                  disabled={!isMandatory}
                 >
                   <ToggleButton value={1}>1º</ToggleButton>
                   <ToggleButton value={2}>2º</ToggleButton>
@@ -762,6 +1323,7 @@ function CoursesPage({ showAlert }) {
                   exclusive
                   onChange={handleChangeSemester}
                   fullWidth={true}
+                  disabled={!isMandatory}
                 >
                   <ToggleButton value={1}>
                     <OneIcon />
@@ -771,7 +1333,7 @@ function CoursesPage({ showAlert }) {
                   </ToggleButton>
                 </ToggleButtonGroup>
               </Grid>
-              <Grid size={{ xs: 12, sm: 12, lg: 5 }}>
+              <Grid size={{ xs: 12, sm: 12, lg: 6 }}>
                 <Typography gutterBottom>Tipo</Typography>
                 <ToggleButtonGroup
                   value={type}
@@ -781,6 +1343,9 @@ function CoursesPage({ showAlert }) {
                 >
                   <ToggleButton value="mandatory">Obligatoria</ToggleButton>
                   <ToggleButton value="optional">Optativa</ToggleButton>
+                  <ToggleButton value="extraescolar">
+                    Extracurricular
+                  </ToggleButton>
                 </ToggleButtonGroup>
               </Grid>
             </Grid>
@@ -833,6 +1398,107 @@ function CoursesPage({ showAlert }) {
             Cancelar
           </Button>
           <Button onClick={handleDelete} color="success" variant="contained">
+            Aceptar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* dialog de agregar slot para optiativa*/}
+      <Dialog
+        open={dialogAddSlot}
+        onClose={handleCloseDialogAddSlot}
+        TransitionComponent={Transition}
+        sx={{
+          "& .MuiDialog-paper": { width: "50%", maxWidth: "none" },
+        }}
+      >
+        <DialogTitle>Asignar espacio para optativa</DialogTitle>
+
+        <DialogContent sx={{ paddingBottom: 1 }}>
+          <Grid container spacing={2} sx={{ marginTop: 0.7 }}>
+            <Grid size={{ xs: 12, sm: 12, lg: 7 }}>
+              <Typography gutterBottom>Año</Typography>
+              <ToggleButtonGroup
+                value={year}
+                exclusive
+                onChange={handleChangeYear}
+                fullWidth={true}
+              >
+                <ToggleButton value={1}>1º</ToggleButton>
+                <ToggleButton value={2}>2º</ToggleButton>
+                <ToggleButton value={3}>3º</ToggleButton>
+                <ToggleButton value={4}>4º</ToggleButton>
+                <ToggleButton value={5}>5º</ToggleButton>
+              </ToggleButtonGroup>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 12, lg: 5 }}>
+              <Typography gutterBottom>Cuatrimestre</Typography>
+              <ToggleButtonGroup
+                value={semester}
+                exclusive
+                onChange={handleChangeSemester}
+                fullWidth={true}
+              >
+                <ToggleButton value={1}>
+                  <OneIcon />
+                </ToggleButton>
+                <ToggleButton value={2}>
+                  <TwoIcon />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            marginX: 2,
+            marginY: 1,
+          }}
+        >
+          <Button
+            onClick={handleCloseDialogAddSlot}
+            variant="contained"
+            color="error"
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleSaveSlot} // guarda los cambios
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* dialog de eliminar slot para optiativa*/}
+      <Dialog
+        open={dialogDeleteSlot}
+        onClose={handleCloseDialogDeleteSlot}
+        TransitionComponent={Transition}
+      >
+        <DialogTitle>{"¿Seguro que quieres eliminar este slot?"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Se eliminara el slot de optativa, las materias asignadas a este slot
+            no serán eliminadas
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDialogDeleteSlot}
+            color="error"
+            variant="contained"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeleteSlot}
+            color="success"
+            variant="contained"
+          >
             Aceptar
           </Button>
         </DialogActions>

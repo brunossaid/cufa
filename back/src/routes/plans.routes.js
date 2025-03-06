@@ -6,7 +6,7 @@ import {
   createPlan,
   updatePlan,
   deletePlan,
-  removeCourseFromPlan,
+  removeItemFromPlan,
 } from "../controllers/plans.controller.js";
 import { validateSchema } from "../middlewares/validator.middleware.js";
 import { createPlanSchema } from "../schemas/plan.schema.js";
@@ -22,7 +22,7 @@ router.post(
   createPlan
 );
 router.put("/plans/:id", authRequired, updatePlan);
-router.delete("/plans/:id/remove-course", authRequired, removeCourseFromPlan);
+router.delete("/plans/:id/remove-item", authRequired, removeItemFromPlan); // Ruta actualizada
 router.delete("/plans/:id", authRequired, deletePlan);
 
 export default router;

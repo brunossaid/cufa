@@ -1,9 +1,13 @@
+import mongoose from "mongoose";
 import Plan from "../models/plan.model.js";
 
 // obtener todos los planes
 export const getPlans = async (req, res) => {
   try {
-    const plans = await Plan.find({ user: req.user.id }).populate("user");
+    const plans = await Plan.find({ user: req.user.id })
+      .populate("user")
+      .populate("cells.itemId"); // tanto courses como extraTasks
+
     res.json(plans);
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -44,27 +48,24 @@ export const deletePlan = async (req, res) => {
 // editar plan
 export const updatePlan = async (req, res) => {
   try {
-    const { id } = req.params; // id del plan a actualizar
-    const { cells, name } = req.body; // datos enviados desde el frontend
+    const { id } = req.params;
+    const { cells, name } = req.body;
 
     const plan = await Plan.findById(id);
     if (!plan) {
       return res.status(404).json({ message: "Plan no encontrado" });
     }
 
-    // actualizar el nombre del plan si se proporciona
     if (name !== undefined) {
       plan.name = name;
     }
 
-    // reemplazar completamente las celdas
     if (cells && Array.isArray(cells)) {
       plan.cells = cells;
     }
 
     console.log("(UP)plan.cells: ", req.body);
 
-    // guardar los cambios en la base de datos
     await plan.save();
     res.json(plan);
   } catch (error) {
@@ -72,24 +73,27 @@ export const updatePlan = async (req, res) => {
   }
 };
 
-// editar plan (eliminar una materia completa)
-export const removeCourseFromPlan = async (req, res) => {
+// eliminar un item del plan (course o extraTask)
+export const removeItemFromPlan = async (req, res) => {
   const { id } = req.params;
-  const { courseCode } = req.body;
+  const { itemId } = req.body;
 
   try {
-    // eliminar las celdas asociadas a courseCode
+    if (!mongoose.Types.ObjectId.isValid(itemId)) {
+      return res.status(400).json({ message: "Invalid item ID" });
+    }
+
     const updatedPlan = await Plan.findByIdAndUpdate(
       id,
-      { $pull: { cells: { courseCode } } }, // `$pull` elimina elementos que coinciden con el filtro
-      { new: true } // retorna el documento actualizado
+      { $pull: { cells: { itemId: new mongoose.Types.ObjectId(itemId) } } },
+      { new: true }
     );
 
     if (!updatedPlan) {
       return res.status(404).json({ message: "Plan not found" });
     }
 
-    res.status(200).json({ message: "Course removed from plan", updatedPlan });
+    res.status(200).json({ message: "Item removed from plan", updatedPlan });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -98,7 +102,10 @@ export const removeCourseFromPlan = async (req, res) => {
 // obtener plan por ID
 export const getPlan = async (req, res) => {
   try {
-    const planData = await Plan.findById(req.params.id).populate("user");
+    const planData = await Plan.findById(req.params.id)
+      .populate("user")
+      .populate("cells.itemId");
+
     if (!planData) {
       return res.status(404).json({ message: "Plan not found" });
     }

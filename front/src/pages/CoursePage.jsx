@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   Autocomplete,
   Box,
+  Card,
   FormControl,
   FormHelperText,
   IconButton,
@@ -13,6 +14,7 @@ import {
   ListItemAvatar,
   ListItemText,
   MenuItem,
+  Paper,
   Select,
   TextField,
   ToggleButton,
@@ -39,6 +41,7 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedInRounde
 import AssignmentLateIcon from "@mui/icons-material/AssignmentLateRounded";
 import ArrowLeftIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowRightIcon from "@mui/icons-material/ArrowForwardIosRounded";
+import { ChromePicker } from "react-color";
 
 function CoursePage({ showAlert }) {
   const { courses, periods, loading } = useAuth();
@@ -68,6 +71,7 @@ function CoursePage({ showAlert }) {
   const [classroom, setClassroom] = React.useState("");
   const [commission, setCommission] = React.useState("");
   const [observations, setObservations] = React.useState("");
+  const [color, setColor] = React.useState("");
   // useStates de profesores - horarios
   const [professors, setProfessors] = React.useState([]);
   const [editingProffessorIndex, setEditingProffessorIndex] =
@@ -87,6 +91,12 @@ function CoursePage({ showAlert }) {
   const [selectedPeriod, setSelectedPeriod] = React.useState(false);
   const [selectedCourse, setSelectedCourse] = React.useState(false);
 
+  // si el type NO ES mandatory, no se puede modificar el year y semester
+  const [isMandatory, setIsMandatory] = React.useState(true);
+
+  // color picker
+  const [showPicker, setShowPicker] = React.useState(false);
+
   // resetear datos de course
   const resetCourseFields = () => {
     setName(course.name);
@@ -96,6 +106,7 @@ function CoursePage({ showAlert }) {
     setYear(course.year);
     setSemester(course.semester);
     setType(course.type);
+    setColor(course.color);
   };
 
   // resetear datos de period
@@ -112,7 +123,7 @@ function CoursePage({ showAlert }) {
     setSchedules(selectedCourse.schedules || []);
   };
 
-  // filtrar los periodos en los que se curso la materia ✅
+  // filtrar los periodos en los que se curso la materia
   React.useEffect(() => {
     if (course && periods?.length > 0) {
       const filteredPeriods = periods.filter((period) =>
@@ -219,6 +230,7 @@ function CoursePage({ showAlert }) {
     if (year !== course.year) editedCourse.year = year;
     if (semester !== course.semester) editedCourse.semester = semester;
     if (type !== course.type) editedCourse.type = type;
+    if (color !== course.color) editedCourse.color = color;
     if (commission !== course.commission) editedCourse.commission = commission;
     if (building !== course.building) editedCourse.building = building;
     if (classroom !== course.classroom) editedCourse.classroom = classroom;
@@ -250,6 +262,7 @@ function CoursePage({ showAlert }) {
   const cancelCourseChanges = () => {
     resetCourseFields(); // resetear datos
     setEditCourseMode(false);
+    setShowPicker(false);
   };
 
   // guardar cambios de period
@@ -329,26 +342,44 @@ function CoursePage({ showAlert }) {
     setWorkload(event.target.value);
   };
   const handleChangeModality = (event, newValue) => {
-    setModality(newValue);
+    if (newValue !== null) {
+      setModality(newValue);
+    }
   };
   const handleChangePrerequisites = (event, value) => {
     const updatedPrerequisites = value.map((course) => course._id);
     setPrerequisites(updatedPrerequisites);
   };
   const handleChangeYear = (event, newYear) => {
-    setYear(newYear);
+    if (newYear !== null) {
+      setYear(newYear);
+    }
   };
   const handleChangeSemester = (event, newSemester) => {
-    setSemester(newSemester);
+    if (newSemester !== null) {
+      setSemester(newSemester);
+    }
   };
   const handleChangeType = (event, newType) => {
-    setType(newType);
+    if (newType !== null) {
+      setType(newType);
+
+      if (newType === "mandatory") {
+        setIsMandatory(true);
+        year === null && setYear(course.year);
+        semester === null && setSemester(course.semester);
+      } else {
+        setIsMandatory(false);
+        setYear(null);
+        setSemester(null);
+      }
+    }
   };
 
   // manejo de cambios del period
   const handleChangeStatus = (event) => {
-    setGrade(null); // Reiniciar nota
-    setFinalGrade(null); // Reiniciar nota final
+    setGrade(null);
+    setFinalGrade(null);
     setStatus(event.target.value);
   };
   const handleChangeGrade = (event) => {
@@ -475,6 +506,16 @@ function CoursePage({ showAlert }) {
   };
   const timeOptions = generateTimeOptions();
 
+  // color picker
+  // cambia el color
+  const handleColorChange = (newColor) => {
+    setColor(newColor.hex);
+  };
+  // ver el picker
+  const handleClickPaper = () => {
+    setShowPicker(!showPicker);
+  };
+
   return (
     <div>
       <Box
@@ -512,7 +553,7 @@ function CoursePage({ showAlert }) {
       <Grid container spacing={2}>
         {/* fila 1: nombre - codigo - tipo */}
         <Grid container size={12} sx={{ marginTop: 0.7 }}>
-          <Grid size={{ xs: 12, md: 4, lg: 2 }}>
+          <Grid size={{ xs: 12, md: 4, lg: 1.5 }}>
             <TextField
               label="Código"
               name="code"
@@ -543,7 +584,7 @@ function CoursePage({ showAlert }) {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4, lg: 5 }}>
+          <Grid size={{ xs: 12, md: 12, lg: 5.5 }}>
             <ToggleButtonGroup
               value={type}
               exclusive
@@ -556,6 +597,9 @@ function CoursePage({ showAlert }) {
               </ToggleButton>
               <ToggleButton value="optional" disabled={!editCourseMode}>
                 Optativa
+              </ToggleButton>
+              <ToggleButton value="extraescolar" disabled={!editCourseMode}>
+                Extracurricular
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
@@ -621,12 +665,13 @@ function CoursePage({ showAlert }) {
                 prerequisites.includes(course._id)
               )}
               onChange={handleChangePrerequisites}
-              readOnly={!editCourseMode}
+              disabled={!editCourseMode}
               renderInput={(params) => (
                 <TextField
                   {...params}
                   label="Correlativas"
                   placeholder={prerequisites.length === 0 ? "Materia" : ""}
+                  disabled={!editCourseMode}
                 />
               )}
               sx={{
@@ -661,9 +706,9 @@ function CoursePage({ showAlert }) {
             />
           </Grid>
         </Grid>
-        {/* fila 3: año - cuatrimestre */}
+        {/* fila 3: año - cuatrimestre - color */}
         <Grid container size={12}>
-          <Grid size={{ xs: 12, sm: 12, md: 8, lg: 5 }}>
+          <Grid size={{ xs: 12, sm: 12, md: 8, lg: 6 }}>
             <Typography gutterBottom sx={{ marginBottom: 0 }}>
               Año
             </Typography>
@@ -673,25 +718,40 @@ function CoursePage({ showAlert }) {
               onChange={handleChangeYear}
               fullWidth={true}
             >
-              <ToggleButton value={1} disabled={!editCourseMode}>
+              <ToggleButton
+                value={1}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 1º
               </ToggleButton>
-              <ToggleButton value={2} disabled={!editCourseMode}>
+              <ToggleButton
+                value={2}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 2º
               </ToggleButton>
-              <ToggleButton value={3} disabled={!editCourseMode}>
+              <ToggleButton
+                value={3}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 3º
               </ToggleButton>
-              <ToggleButton value={4} disabled={!editCourseMode}>
+              <ToggleButton
+                value={4}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 4º
               </ToggleButton>
-              <ToggleButton value={5} disabled={!editCourseMode}>
+              <ToggleButton
+                value={5}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 5º
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 12, md: 4, lg: 2 }}>
+          <Grid size={{ xs: 12, sm: 12, md: 4, lg: 3 }}>
             <Typography gutterBottom sx={{ marginBottom: 0 }}>
               Cuatrimestre
             </Typography>
@@ -701,16 +761,50 @@ function CoursePage({ showAlert }) {
               onChange={handleChangeSemester}
               fullWidth={true}
             >
-              <ToggleButton value={1} disabled={!editCourseMode}>
+              <ToggleButton
+                value={1}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 <OneIcon />
               </ToggleButton>
-              <ToggleButton value={2} disabled={!editCourseMode}>
+              <ToggleButton
+                value={2}
+                disabled={!editCourseMode || !isMandatory}
+              >
                 <TwoIcon />
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 12, lg: 5 }}></Grid>
+          <Grid size={{ xs: 12, sm: 12, lg: 3 }}>
+            <Typography gutterBottom sx={{ marginBottom: 0 }}>
+              Color
+            </Typography>
+            <Paper
+              sx={{
+                backgroundColor: color,
+                height: 48,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+              }}
+              disabled={!editCourseMode}
+              onClick={handleClickPaper}
+            >
+              <Typography>{color}</Typography>
+            </Paper>
+            {showPicker && editCourseMode && (
+              <div
+                style={{
+                  position: "absolute",
+                  zIndex: 10,
+                }}
+              >
+                <ChromePicker color={color} onChange={handleColorChange} />
+              </div>
+            )}
+          </Grid>
         </Grid>
       </Grid>
 

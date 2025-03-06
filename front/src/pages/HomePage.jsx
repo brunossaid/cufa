@@ -7,7 +7,7 @@ import HubIcon from "@mui/icons-material/Hub";
 
 const HomePage = () => {
   // extraer datos del contexto
-  const { user, courses, periods, loading } = useAuth();
+  const { user, courses, periods, loading, optionalSlots } = useAuth();
 
   // buscar entre los periods el status
   const getStatus = (courseId) => {
@@ -24,36 +24,110 @@ const HomePage = () => {
   };
 
   // cuentas para los graficos
-  // total
-  const approvedCount = courses.filter(
+  // total de materias (obligatorias + extracurriculares + optionalSlots)
+  const totalCourses =
+    courses.filter(
+      (course) => course.type === "mandatory" || course.type === "extraescolar"
+    ).length + optionalSlots.length;
+  // total aprobadas (obligatorias + extracurriculares)
+  const mandatoryApprovedCount = courses.filter(
     (course) =>
-      getStatus(course._id) === "approved" ||
-      getStatus(course._id) === "promoted"
+      (getStatus(course._id) === "approved" ||
+        getStatus(course._id) === "promoted") &&
+      course.type !== "optional"
   ).length;
-  const totalCourses = courses.length;
+  // total aprobadas (opcionales)
+  const optionalApprovedCount = Math.min(
+    optionalSlots.length,
+    courses.filter(
+      (course) =>
+        (getStatus(course._id) === "approved" ||
+          getStatus(course._id) === "promoted") &&
+        course.type === "optional"
+    ).length
+  );
+  const approvedCount = mandatoryApprovedCount + optionalApprovedCount;
   const pendingCount = totalCourses - approvedCount;
 
-  // calcular porcentaje
-  const calculateApprovedPercentage = (year) => {
-    const total = courses.filter((course) => course.year == year).length;
-    if (total === 0) return 0;
-
-    const approved = courses.filter(
+  // porcentaje y texto de los linearprogress
+  const getApprovalDetails = () => {
+    // lista de opcionales aprobadas
+    const approvedOptionalCourses = courses.filter(
       (course) =>
-        course.year == year &&
+        course.type === "optional" &&
         (getStatus(course._id) === "approved" ||
           getStatus(course._id) === "promoted")
-    ).length;
+    );
 
-    return Math.round((approved / total) * 100);
+    let result = {};
+
+    // para titulo intermedio
+    let approvedCount123 = 0;
+    let totalCourses123 = 0;
+
+    // recorremos los 5 años
+    for (let year = 1; year <= 5; year++) {
+      // total de materias y slots por año
+      const totalCourses = [
+        ...courses.filter((course) => course.year === year),
+        ...optionalSlots.filter((slot) => slot.year === year),
+      ].length;
+
+      // materias aprobadas en el año
+      let mandatoryApprovedCoursesCount = courses.filter(
+        (course) =>
+          course.year === year &&
+          (getStatus(course._id) === "approved" ||
+            getStatus(course._id) === "promoted")
+      ).length;
+
+      // slots en el año
+      let slotsCount = optionalSlots.filter(
+        (slot) => slot.year === year
+      ).length;
+
+      // aprobadas totales
+      let approvedCount = mandatoryApprovedCoursesCount;
+
+      for (
+        let i = 0;
+        i < slotsCount && approvedOptionalCourses.length > 0;
+        i++
+      ) {
+        // si hay opcionales aprobadas:
+        if (approvedOptionalCourses.length > 0) {
+          approvedOptionalCourses.shift(); // eliminamos una
+          approvedCount++; // incrementamos la cuenta total
+        }
+      }
+
+      // si el año es 1, 2 o 3, sumar para titulo intermedio
+      if (year <= 3) {
+        totalCourses123 += totalCourses;
+        approvedCount123 += approvedCount;
+      }
+
+      // resultados
+      result[year] = {
+        text: `${approvedCount}/${totalCourses} Aprobadas`,
+        percentage: Math.round((approvedCount / totalCourses) * 100),
+      };
+    }
+
+    // porcentaje del titulo intermedio
+    const percentage123 = Math.round(
+      (approvedCount123 / totalCourses123) * 100
+    );
+
+    // agregar el resultado del titulo intermedio
+    result[123] = {
+      text: `${approvedCount123}/${totalCourses123} Aprobadas`,
+      percentage: percentage123,
+    };
+
+    return result;
   };
-
-  // calcular porcentaje de cada año
-  const approvedPercentage1 = calculateApprovedPercentage(1);
-  const approvedPercentage2 = calculateApprovedPercentage(2);
-  const approvedPercentage3 = calculateApprovedPercentage(3);
-  const approvedPercentage4 = calculateApprovedPercentage(4);
-  const approvedPercentage5 = calculateApprovedPercentage(5);
+  const approvalData = getApprovalDetails();
 
   // titulo intermedio
   const approvedPercentage123 =
@@ -127,201 +201,36 @@ const HomePage = () => {
               <Typography variant="h4" sx={{ textAlign: "center", mb: 4 }}>
                 Progreso por Año
               </Typography>
-              <Stack sx={{ width: "100%" }} spacing={4}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography
-                    sx={{ width: 20, textAlign: "center", marginRight: 1 }}
-                    variant="h6"
-                  >
-                    1º
-                  </Typography>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Tooltip
-                      title={`${
-                        courses.filter(
-                          (course) =>
-                            course.year == 1 &&
-                            (getStatus(course._id) === "approved" ||
-                              getStatus(course._id) === "promoted")
-                        ).length
-                      }/${
-                        courses.filter((course) => course.year == 1).length
-                      } Aprobadas`}
-                    >
-                      <LinearProgress
-                        variant="determinate"
-                        value={approvedPercentage1}
-                        sx={{ height: 20, borderRadius: 5 }}
-                      />
-                    </Tooltip>
-                  </Box>
-                  <Typography
-                    sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
-                    variant="h6"
-                  >
-                    {approvedPercentage1}%
-                  </Typography>
-                </Box>
 
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography
-                    sx={{ width: 20, textAlign: "center", marginRight: 1 }}
-                    variant="h6"
+              <Stack sx={{ width: "100%" }} spacing={4}>
+                {[1, 2, 3, 4, 5].map((year) => (
+                  <Box
+                    sx={{ display: "flex", alignItems: "center" }}
+                    key={year}
                   >
-                    2º
-                  </Typography>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Tooltip
-                      title={`${
-                        courses.filter(
-                          (course) =>
-                            course.year == 2 && course.status == "approved"
-                        ).length
-                      }/${
-                        courses.filter((course) => course.year == 2).length
-                      } Aprobadas`}
+                    <Typography
+                      sx={{ width: 20, textAlign: "center", marginRight: 1 }}
+                      variant="h6"
                     >
-                      <LinearProgress
-                        variant="determinate"
-                        value={approvedPercentage2}
-                        sx={{ height: 20, borderRadius: 5 }}
-                      />
-                    </Tooltip>
-                  </Box>
-                  <Typography
-                    sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
-                    variant="h6"
-                  >
-                    {approvedPercentage2}%
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography
-                    sx={{ width: 20, textAlign: "center", marginRight: 1 }}
-                    variant="h6"
-                  >
-                    3º
-                  </Typography>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Tooltip
-                      title={`${
-                        courses.filter(
-                          (course) =>
-                            course.year == 3 &&
-                            (getStatus(course._id) === "approved" ||
-                              getStatus(course._id) === "promoted")
-                        ).length
-                      }/${
-                        courses.filter((course) => course.year == 3).length
-                      } Aprobadas`}
+                      {year}º
+                    </Typography>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Tooltip title={approvalData[year]?.text || "No data"}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={approvalData[year]?.percentage || 0}
+                          sx={{ height: 20, borderRadius: 5 }}
+                        />
+                      </Tooltip>
+                    </Box>
+                    <Typography
+                      sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
+                      variant="h6"
                     >
-                      <LinearProgress
-                        variant="determinate"
-                        value={approvedPercentage3}
-                        sx={{ height: 20, borderRadius: 5 }}
-                      />
-                    </Tooltip>
+                      {approvalData[year]?.percentage || 0}%
+                    </Typography>
                   </Box>
-                  <Typography
-                    sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
-                    variant="h6"
-                  >
-                    {approvedPercentage3}%
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography
-                    sx={{ width: 20, textAlign: "center", marginRight: 1 }}
-                    variant="h6"
-                  >
-                    4º
-                  </Typography>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Tooltip
-                      title={`${
-                        courses.filter(
-                          (course) =>
-                            course.year == 4 &&
-                            (getStatus(course._id) === "approved" ||
-                              getStatus(course._id) === "promoted")
-                        ).length
-                      }/${
-                        courses.filter((course) => course.year == 4).length
-                      } Aprobadas`}
-                    >
-                      <LinearProgress
-                        variant="determinate"
-                        value={approvedPercentage4}
-                        sx={{ height: 20, borderRadius: 5 }}
-                      />
-                    </Tooltip>
-                  </Box>
-                  <Typography
-                    sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
-                    variant="h6"
-                  >
-                    {approvedPercentage4}%
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography
-                    sx={{ width: 20, textAlign: "center", marginRight: 1 }}
-                    variant="h6"
-                  >
-                    5º
-                  </Typography>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Tooltip
-                      title={`${
-                        courses.filter(
-                          (course) =>
-                            course.year == 5 &&
-                            (getStatus(course._id) === "approved" ||
-                              getStatus(course._id) === "promoted")
-                        ).length
-                      }/${
-                        courses.filter((course) => course.year == 5).length
-                      } Aprobadas`}
-                    >
-                      <LinearProgress
-                        variant="determinate"
-                        value={approvedPercentage5}
-                        sx={{ height: 20, borderRadius: 5 }}
-                      />
-                    </Tooltip>
-                  </Box>
-                  <Typography
-                    sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
-                    variant="h6"
-                  >
-                    {approvedPercentage5}%
-                  </Typography>
-                </Box>
+                ))}
               </Stack>
 
               {/* titulo intermedio */}
@@ -339,23 +248,10 @@ const HomePage = () => {
               >
                 <HubIcon fontSize={"medium"} sx={{ marginRight: 1 }} />
                 <Box sx={{ flexGrow: 1 }}>
-                  <Tooltip
-                    title={`${
-                      courses.filter(
-                        (course) =>
-                          [1, 2, 3].includes(course.year) &&
-                          (getStatus(course._id) === "approved" ||
-                            getStatus(course._id) === "promoted")
-                      ).length
-                    }/${
-                      courses.filter((course) =>
-                        [1, 2, 3].includes(course.year)
-                      ).length
-                    } Aprobadas`}
-                  >
+                  <Tooltip title={approvalData[123]?.text}>
                     <LinearProgress
                       variant="determinate"
-                      value={approvedPercentage123}
+                      value={approvalData[123]?.percentage}
                       color="secondary"
                       sx={{ height: 20, borderRadius: 5 }}
                     />
@@ -365,7 +261,7 @@ const HomePage = () => {
                   sx={{ width: 50, textAlign: "center", marginLeft: 1 }}
                   variant="h6"
                 >
-                  {approvedPercentage123}%
+                  {approvalData[123]?.percentage}%
                 </Typography>
               </Box>
             </Grid>

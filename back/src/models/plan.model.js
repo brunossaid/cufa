@@ -11,14 +11,17 @@ const cellSchema = new mongoose.Schema({
     type: Number, // hora en formato de 24hs
     required: true,
   },
-  courseCode: {
-    type: String, // codigo
+  itemId: {
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
+    refPath: "itemType", // puede ser un course o un extraTask
+  },
+  itemType: {
+    type: String,
+    required: true,
+    enum: ["course", "extraTask"],
   },
 });
-
-// indice unico para evitar duplicados
-// cellSchema.index({ day: 1, hour: 1 }, { unique: true });
 
 // esquema del plan
 const planSchema = new mongoose.Schema(
