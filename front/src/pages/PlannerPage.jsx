@@ -1,25 +1,13 @@
 import React, { useEffect, useState } from "react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TableFooter,
   Box,
   Typography,
   IconButton,
   Tooltip,
-  Divider,
-  Menu,
-  MenuItem,
   Button,
   TextField,
   Dialog,
   DialogTitle,
-  DialogContentText,
   DialogContent,
   DialogActions,
   Slide,
@@ -29,11 +17,8 @@ import {
   Avatar,
   ListItemAvatar,
 } from "@mui/material";
-import CircleIcon from "@mui/icons-material/Circle";
 import AddIcon from "@mui/icons-material/AddRounded";
 import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
-import CloseIcon from "@mui/icons-material/CloseRounded";
-import CancelIcon from "@mui/icons-material/CancelRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
 import EditIcon from "@mui/icons-material/EditRounded";
 import TurnedInIcon from "@mui/icons-material/TurnedInRounded";
@@ -126,11 +111,11 @@ function PlannerPage({ showAlert }) {
     if (user) fetchPlans();
   }, [user]);
 
-  const [items, setitems] = useState(courses);
+  const [items, setItems] = useState(courses);
 
   // combinamos courses y extraTasks
   useEffect(() => {
-    setitems([...courses, ...extraTasks]);
+    setItems([...courses, ...extraTasks]);
   }, [courses, extraTasks]);
 
   // dialog de actividades extras
@@ -303,13 +288,14 @@ function PlannerPage({ showAlert }) {
       {plans.length === 0 ? (
         <Typography>No hay planes creados</Typography>
       ) : (
-        plans.map((plan) => (
+        plans.map((plan, index) => (
           <div key={plan._id}>
             <Box
               display="flex"
               justifyContent="space-between"
               alignItems="center"
             >
+              {/* 
               <TextField
                 label="Plan"
                 variant="outlined"
@@ -331,7 +317,8 @@ function PlannerPage({ showAlert }) {
                 }
                 // al deseleccionar el textfield, guardamos el cambio en la base de datos
                 onBlur={(e) => handleUpdatePlanName(plan._id, e.target.value)}
-              />
+              />*/}
+              <Typography>Plan {index + 1}</Typography>
               <Tooltip title="Eliminar Plan">
                 <IconButton
                   size={"small"}

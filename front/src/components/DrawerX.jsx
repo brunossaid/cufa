@@ -16,8 +16,6 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import SchoolIcon from "@mui/icons-material/SchoolRounded";
 import EditCalendarIcon from "@mui/icons-material/EditCalendarRounded";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -25,10 +23,10 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
 import LightModeRounded from "@mui/icons-material/LightModeRounded";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Menu, MenuItem } from "@mui/material";
-import logo from "../assets/cufa-logo.png";
+import logo from "../img/cufa-logo.png";
 
 const drawerWidth = 240;
 
@@ -127,6 +125,7 @@ export default function DrawerX({
   };
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { user, logout } = useAuth();
 
@@ -252,28 +251,68 @@ export default function DrawerX({
         <List>
           <ListItem key="courses" disablePadding>
             <ListItemButton onClick={() => navigate("/courses")}>
-              <ListItemIcon>{<SchoolIcon />}</ListItemIcon>
+              <ListItemIcon>
+                {
+                  <SchoolIcon
+                    sx={{
+                      color:
+                        location.pathname === "/courses" &&
+                        theme.palette.primary.dark,
+                    }}
+                  />
+                }
+              </ListItemIcon>
               <ListItemText primary="Materias" />
             </ListItemButton>
           </ListItem>
 
           <ListItem key="planner" disablePadding>
             <ListItemButton onClick={() => navigate("/planner")}>
-              <ListItemIcon>{<EditCalendarIcon />}</ListItemIcon>
+              <ListItemIcon>
+                {
+                  <EditCalendarIcon
+                    sx={{
+                      color:
+                        location.pathname === "/planner" &&
+                        theme.palette.primary.dark,
+                    }}
+                  />
+                }
+              </ListItemIcon>
               <ListItemText primary="Planificador" />
             </ListItemButton>
           </ListItem>
 
           <ListItem key="history" disablePadding>
             <ListItemButton onClick={() => navigate("/history")}>
-              <ListItemIcon>{<ReceiptLongIcon />}</ListItemIcon>
+              <ListItemIcon>
+                {
+                  <ReceiptLongIcon
+                    sx={{
+                      color:
+                        location.pathname === "/history" &&
+                        theme.palette.primary.dark,
+                    }}
+                  />
+                }
+              </ListItemIcon>
               <ListItemText primary="Historial" />
             </ListItemButton>
           </ListItem>
 
           <ListItem key="statistics" disablePadding>
             <ListItemButton onClick={() => navigate("/statistics")}>
-              <ListItemIcon>{<BarChartIcon />}</ListItemIcon>
+              <ListItemIcon>
+                {
+                  <BarChartIcon
+                    sx={{
+                      color:
+                        location.pathname === "/statistics" &&
+                        theme.palette.primary.dark,
+                    }}
+                  />
+                }
+              </ListItemIcon>
               <ListItemText primary="Estadisticas" />
             </ListItemButton>
           </ListItem>

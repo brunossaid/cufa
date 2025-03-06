@@ -30,7 +30,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/VisibilityRounded";
 import DeleteIcon from "@mui/icons-material/DeleteRounded";
-import BookmarkRemoveIcon from "@mui/icons-material/BookmarkRemoveRounded";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
@@ -46,7 +45,6 @@ import {
 } from "../api/courses";
 import { useNavigate } from "react-router-dom";
 import Slide from "@mui/material/Slide";
-import LoadingX from "../components/LoadingX";
 import {
   createOptionalSlotRequest,
   deleteOptionalSlotRequest,
@@ -1060,11 +1058,13 @@ function CoursesPage({ showAlert }) {
   React.useEffect(() => {
     fetchCourses();
     fetchOptionalSlots();
-  }, [user]);
+  }, []);
 
   // que se actualicen las filas
   React.useEffect(() => {
-    setRows(generateRows(courses, optionalSlots));
+    if (courses.length > 0 && optionalSlots.length > 0) {
+      setRows(generateRows(courses, optionalSlots));
+    }
   }, [courses, optionalSlots]);
 
   return (
@@ -1223,7 +1223,7 @@ function CoursesPage({ showAlert }) {
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 8 }}>
-                <TextField
+                {/* <TextField
                   label="Nombre"
                   name="name"
                   fullWidth
@@ -1232,6 +1232,14 @@ function CoursesPage({ showAlert }) {
                   onChange={handleChangeName}
                   error={!!errors.name}
                   helperText={errors.name}
+                /> */}
+                <TextField
+                  label="Nombre"
+                  name="name"
+                  fullWidth
+                  autoComplete="off"
+                  value={name}
+                  onChange={handleChangeName}
                 />
               </Grid>
             </Grid>

@@ -69,6 +69,7 @@ function StatisticsPage() {
       });
     });
 
+    console.log(counts);
     return counts;
   };
   const courseCounts = getCourseCounts(periods);
@@ -95,18 +96,6 @@ function StatisticsPage() {
     return 0;
   };
   const totalAverage = getTotalAverage(periods);
-
-  // titulo final
-  const approvedPercentageTotal =
-    Math.round(
-      (courses.filter(
-        (course) =>
-          getStatus(course._id) == "approved" ||
-          getStatus(course._id) === "promoted"
-      ).length /
-        courses.length) *
-        100
-    ) || 0;
 
   // linearprogress de titulos
   const getApprovalDetails = () => {
@@ -225,7 +214,7 @@ function StatisticsPage() {
   return (
     <div>
       <h1>Estadisticas</h1>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} marginBottom={10}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card sx={{ borderRadius: 2 }}>
             <Typography variant="h5" marginLeft={3} marginTop={2}>

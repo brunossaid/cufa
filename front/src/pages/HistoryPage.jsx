@@ -29,7 +29,6 @@ import { useAuth } from "../context/AuthContext";
 import EditIcon from "@mui/icons-material/EditRounded";
 import AddIcon from "@mui/icons-material/AddRounded";
 import DoneIcon from "@mui/icons-material/DoneRounded";
-import CloseIcon from "@mui/icons-material/CloseRounded";
 import AddCircleIcon from "@mui/icons-material/AddCircleRounded";
 import DeleteIcon from "@mui/icons-material/DeleteRounded";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedInRounded";

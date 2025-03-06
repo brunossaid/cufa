@@ -65,6 +65,10 @@ const HomePage = () => {
     let approvedCount123 = 0;
     let totalCourses123 = 0;
 
+    // para titulo final
+    let approvedCountFinal = 0;
+    let totalCoursesFinal = 0;
+
     // recorremos los 5 años
     for (let year = 1; year <= 5; year++) {
       // total de materias y slots por año
@@ -107,6 +111,10 @@ const HomePage = () => {
         approvedCount123 += approvedCount;
       }
 
+      // sumar en los 5 años, para el titulo final
+      totalCoursesFinal += totalCourses;
+      approvedCountFinal += approvedCount;
+
       // resultados
       result[year] = {
         text: `${approvedCount}/${totalCourses} Aprobadas`,
@@ -118,29 +126,25 @@ const HomePage = () => {
     const percentage123 = Math.round(
       (approvedCount123 / totalCourses123) * 100
     );
-
     // agregar el resultado del titulo intermedio
     result[123] = {
       text: `${approvedCount123}/${totalCourses123} Aprobadas`,
       percentage: percentage123,
     };
 
+    // porcentaje del titulo final
+    const percentageFinal = Math.round(
+      (approvedCountFinal / totalCoursesFinal) * 100
+    );
+    // agregar el resultado para los 5 años
+    result[12345] = {
+      text: `${approvedCountFinal}/${totalCoursesFinal} Aprobadas`,
+      percentage: percentageFinal,
+    };
+
     return result;
   };
   const approvalData = getApprovalDetails();
-
-  // titulo intermedio
-  const approvedPercentage123 =
-    Math.round(
-      (courses.filter(
-        (course) =>
-          ([1, 2, 3].includes(course.year) &&
-            getStatus(course._id) == "approved") ||
-          getStatus(course._id) === "promoted"
-      ).length /
-        courses.filter((course) => [1, 2, 3].includes(course.year)).length) *
-        100
-    ) || 0;
 
   return (
     <>
@@ -150,7 +154,7 @@ const HomePage = () => {
         <div>
           <h1 style={{ marginBottom: 40 }}>Ingenieria en Informatica</h1>
           {/* piechart */}
-          <Grid container spacing={2} marginX={10}>
+          <Grid container spacing={2} marginX={10} marginBottom={10}>
             <Grid size={{ xs: 12, lg: 5 }}>
               <Box
                 sx={{
@@ -191,7 +195,7 @@ const HomePage = () => {
                   sx={{ paddingLeft: 10 }}
                 />
                 <Typography variant="h3" sx={{ textAlign: "center", mt: 4 }}>
-                  {approvedCount} / {pendingCount + approvedCount}
+                  {approvalData[12345]?.percentage}%
                 </Typography>
               </Box>
             </Grid>

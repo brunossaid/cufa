@@ -46,7 +46,7 @@ export default function Planner({ plan, items, periods }) {
 
     for (let i = periods.length - 1; i >= 0; i--) {
       const period = periods[i];
-      const course = period.items?.find((c) => c.courseId === courseId);
+      const course = period.courses?.find((c) => c.courseId === courseId);
 
       if (course) {
         return course.status;
@@ -247,9 +247,9 @@ export default function Planner({ plan, items, periods }) {
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Grid container size={12}>
-        <Grid size={{ md: 12, lg: 9 }}>
-          {/* tabla */}
+      <Grid container>
+        {/* tabla */}
+        <Grid size={{ xs: 12, lg: 9 }}>
           <TableContainer
             component={Paper}
             sx={{ flex: 1, border: "1px solid #303233" }}
@@ -322,8 +322,8 @@ export default function Planner({ plan, items, periods }) {
           </TableContainer>
         </Grid>
 
-        <Grid size={{ md: 12, lg: 3 }}>
-          {/* menu de items */}
+        {/* menu de items */}
+        <Grid size={{ xs: 12, lg: 3 }}>
           <Box sx={{ marginLeft: 2 }}>
             <Box
               display="flex"
@@ -332,7 +332,7 @@ export default function Planner({ plan, items, periods }) {
             >
               <Typography variant="h6">Materias</Typography>
               {/* boton para agregar items */}
-              {activeItems.length < 6 && (
+              {activeItems.length < 7 && (
                 <Tooltip title="Agregar Materia X">
                   <IconButton size="small" onClick={handleOpenMenu}>
                     <AddIcon />
@@ -389,6 +389,7 @@ export default function Planner({ plan, items, periods }) {
         onClose={handleCloseMenu}
         sx={{ maxHeight: 300 }}
       >
+        {/* filtrar solo los que no esten aprobados */}
         {items
           .filter(
             (course) =>

@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   Autocomplete,
   Box,
-  Card,
   FormControl,
   FormHelperText,
   IconButton,
@@ -37,8 +36,6 @@ import { updateCourseRequest } from "../api/courses";
 import { updatePeriodRequest } from "../api/periods";
 import LoadingX from "../components/LoadingX";
 import { useNavigate } from "react-router-dom";
-import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedInRounded";
-import AssignmentLateIcon from "@mui/icons-material/AssignmentLateRounded";
 import ArrowLeftIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowRightIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import { ChromePicker } from "react-color";
