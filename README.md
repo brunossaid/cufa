@@ -40,3 +40,19 @@ _Registro de todas las materias cursadas y sus resultados_
 ## 📊 Estadísticas  
 _Visualización del progreso en la carrera_  
 ![Estadísticas](front/assets/statistics.png)  
+
+---
+
+## 🛠️ Tecnologías Utilizadas  
+
+### 🎨 Frontend  
+- React  
+- JavaScript  
+- Material UI  
+
+### ⚙️ Backend  
+- Node.js  
+- Express  
+- MongoDB  
+- Mongoose  
+- Zod  
